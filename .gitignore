@@ -1,0 +1,23 @@
+# Secrets — NEVER commit
+*.env
+.env
+.kaggle/
+**/access_token
+**/kaggle.json
+
+# Vendored arcprize clones (huge, have their own upstream history) — authored files are copied into agent/
+ARC-AGI-3-Agents/
+ARC-AGI-3-Kaggle-Starter/
+
+# Python / envs / artefacts
+.venv/
+__pycache__/
+*.pyc
+*.log
+environment_files/
+recordings/
+vendor/
+scratchpad/
+
+# Competition wheels (large binaries)
+arc_agi_3_wheels/
