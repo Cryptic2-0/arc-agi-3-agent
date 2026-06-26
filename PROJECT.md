@@ -31,9 +31,10 @@ THE number = **Total score (0–100%)**, computed:
   vs v1's 3/183 across 2. v2 generalizes ACTION6 into per-object click targets. Regression: sp80 2→1, ft09 1→0
   (ACTION6 targets crowd out simple-action exploration — v3 fix). Recon ([docs/recon.md](docs/recon.md)):
   no-LLM graph exploration is right (LLMs ~0.2–0.4%; best preview 12.58%).
-- **Kaggle:** v1 publicScore **0.17** → **v2 = 0.23** (sub `54007751`, COMPLETE; +35% rel). Phase B is
-  CLI-submittable (no manual click): `kaggle competitions submit ... -k <kernel> -v <N> -f submission.parquet`.
-  Kernel `soumyacryptic/arc-prize-2026-arc-agi-3-starter`.
+- **Kaggle LB:** v1 **0.17** → v2 **0.23** → **v4 = 0.24** (best; sub `54035711`). Submit via CLI (LIMIT 1/DAY,
+  resets UTC midnight): `kaggle competitions submit ... -k <kernel> -v <N> -f submission.parquet`.
+  Kernel `soumyacryptic/arc-prize-2026-arc-agi-3-starter`. Today's slot used on v4.
+- **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private; repo root = `c:/Users/ASUS/Desktop/ARC-AGI`).
 - **Token:** `KGAT_…` = the **Kaggle access token** (valid). Not an arcprize key. Or use Kaggle MCP next time.
 - **Iterations:** v3 (simple-first) regressed → reverted. v4 = **reward-from-level-ups + full determinism**
   (per-instance RNG + sorted tiebreak). Deterministic A/B: reward-ON 7/183 vs OFF 6/183 (small genuine +).

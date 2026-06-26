@@ -208,3 +208,22 @@ Format per entry:
   "clicking small bright things changes the frame" generalizes — the one untried high-value bet.
 - **Discipline note:** with 1/day LB + high offline variance, must validate any candidate over MULTIPLE
   SEEDS (mean, not one sweep) before spending the submission. Best staged = v4≈v5 (7/183, ≈0.23).
+
+## 2026-06-25 — v4 LB score: 0.24 (new best) + published to GitHub
+- **v4 submitted** (kernel v3, sub `54035711`) → **publicScore 0.24** (v2 was 0.23). New best, marginal +0.01
+  (within noise, but technically ahead). Trajectory: v1 0.17 → v2 0.23 → v4 0.24.
+- **GitHub:** published the project → **https://github.com/Cryptic2-0/arc-agi-3-agent** (private, gh user
+  `Cryptic2-0`). Clean repo at ARC-AGI root: docs + `agent/{graph_explorer,my_agent,run_offline}.py`. Excludes
+  the two arcprize clones, wheels, venvs, `.env`, `.kaggle/`. Token verified NOT committed.
+- **v7 (object-relative ACTION6 features):** implemented; click targets now carry (colour, size-bucket) and
+  the change-predictor keys clicks by those features so the agent learns WHICH click-type is productive.
+  Sweep keeps dying on session teardown (slower run); result still pending — running foreground.
+- **Today's 1/day submission USED on v4.** v7 (if it wins) → tomorrow.
+
+## 2026-06-25 — v7 = 8/183 (best yet) → submitting
+- **v7 result (deterministic):** **8/183, 6 games** — r11l 2, vc33 2, cd82 1, lf52 1, sp80 1, tr87 1. Beats
+  v4=7. Object-relative click features pushed vc33 to 2 levels. Best deterministic result so far.
+- **Mirrored v7 → Kaggle `my_agent.py`** (copied graph_explorer verbatim; only class name + import +
+  MAX_ACTIONS=600 differ). Pushed **kernel version 4**, Phase A polling. User confirmed a submission slot
+  is free today → submitting v7 (version 4).
+- **Note:** sweeps kept dying on session teardown; final v7 number came from a foreground run that survived.
