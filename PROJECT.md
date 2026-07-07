@@ -19,31 +19,32 @@ THE number = **Total score (0–100%)**, computed:
 - Eval set: **110 private games, never seen** (55 → public LB, 55 → private LB). 25 public
   games shipped locally (`environment_files/`) for dev only.
 
-## Status
-- **Phase:** steps 1,3,4,5 ✅; step 2 measured; **v1 solver built + measured (steps 7–8)**;
-  **first Kaggle submission pushed (step 6, Phase A).**
-- **Pipeline (dev):** OFFLINE harness — `cd ARC-AGI-3-Agents && python -m uv run run_offline.py --agent=graphexplorer`
-  (`.env`: `OPERATION_MODE=offline`, `ENVIRONMENTS_DIR=<abs>/environment_files`). Local scorecard = real metric.
-- **Pipeline (submit):** `ARC-AGI-3-Kaggle-Starter/` — edit `agent/my_agent.py` → `python scripts/build_notebook.py`
-  → `KAGGLE_API_TOKEN=$(cat .kaggle/access_token) python -m kaggle kernels push -p notebooks/` → manual
-  "Submit to Competition". No `make` on Windows (call scripts directly). `ACCELERATOR=cpu`. User=`soumyacryptic`.
-- **Last result (offline):** **v2 = 7/183 levels across 6 games** (vc33 2, ar25/lf52/m0r0/r11l/sp80 1 each)
-  vs v1's 3/183 across 2. v2 generalizes ACTION6 into per-object click targets. Regression: sp80 2→1, ft09 1→0
-  (ACTION6 targets crowd out simple-action exploration — v3 fix). Recon ([docs/recon.md](docs/recon.md)):
-  no-LLM graph exploration is right (LLMs ~0.2–0.4%; best preview 12.58%).
-- **Kaggle LB:** v1 **0.17** → v2 **0.23** → **v4 = 0.24** (best; sub `54035711`). Submit via CLI (LIMIT 1/DAY,
-  resets UTC midnight): `kaggle competitions submit ... -k <kernel> -v <N> -f submission.parquet`.
-  Kernel `soumyacryptic/arc-prize-2026-arc-agi-3-starter`. Today's slot used on v4.
-- **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private; repo root = `c:/Users/ASUS/Desktop/ARC-AGI`).
-- **Token:** `KGAT_…` = the **Kaggle access token** (valid). Not an arcprize key. Or use Kaggle MCP next time.
-- **Iterations:** v3 (simple-first) regressed → reverted. v4 = **reward-from-level-ups + full determinism**
-  (per-instance RNG + sorted tiebreak). Deterministic A/B: reward-ON 7/183 vs OFF 6/183 (small genuine +).
-  Pushed as **kernel version 3** (auto-submitting). Budget probe: more actions ≠ more depth (strategy-bound).
-- **Measurement caveat:** offline metric is HIGH-VARIANCE (~6–10/183 across trajectories before the
-  determinism fix). Treat deltas <~3 levels as noise. Now deterministic → trustworthy going forward.
-- **Next action:** record v4 LB score. Direction 2 = **RL frame-change predictor** (the 12.58%-winner approach;
-  CNN+RL, needs training/GPU on Kaggle) — the real ceiling-raiser, a big multi-session build to scope next.
-  Exploration agent appears plateaued ~6–10/183 offline; ls20-type alignment puzzles still need reasoning.
+## Status  (rewritten 2026-07-07 — STRATEGY PIVOT)
+- **Phase:** GraphExplorer line RETIRED (plateaued 0.24; v7 crashed on LB = 0.06). **Pivoted to
+  the open-sourced milestone-1 winner: Tufa Labs "duck harness"** (LLM agent, local Qwen3.6-27B-FP8
+  on vLLM, RTX Pro 6000). A verbatim public fork scores **1.21** — 5× our best.
+- **LB context (2026-07-07):** top = **1.56**; top-20 ≥ 1.30, nearly all duck-harness forks.
+  Ours: v4 = 0.24 (sub `54035711`). v7 = 0.06 (crashed; never diagnosed, moot).
+- **In flight:** private fork **`soumyacryptic/taaf-duck-harness-fork` version 1** pushed
+  (verbatim 1.21 notebook; datasets: `driessmit1/arc3-vllm-h100-wheelhouse-v3`,
+  `jeroencottaar/taaf-kaggle-source`, `driessmit1/vrfai-qwen3-6-27b-fp8-hf-snapshot`;
+  `machine_shape: NvidiaRtxPro6000`; internet OFF). Save&Run takes hours (plays 25 offline games).
+  **When complete → submit** (1/day slot, free as of 2026-07-07):
+  `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 1 -f submission.parquet`
+- **Winner source code:** `external/taaf_source/` (TAAF framework + ARC3-Inference "duck").
+  Writeup: Kaggle discussion 717133. Improvement levers named by authors: context
+  compaction/memory, better visual perception, better base model. Variance ±0.4 — don't
+  over-read single LB results.
+- **Pipeline (dev, old graph line):** `cd ARC-AGI-3-Agents && python -m uv run run_offline.py --agent=graphexplorer`.
+  Still useful as cheap baseline/fallback layer.
+- **Token:** `KGAT_…` = Kaggle access token at `ARC-AGI-3-Kaggle-Starter/.kaggle/access_token`.
+  CLI: `export KAGGLE_API_TOKEN=$(cat .kaggle/access_token)`. User=`soumyacryptic`.
+- **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private).
+- **Next actions:** (1) submit fork v1 when run completes → establish ~1.2 baseline;
+  (2) study `external/taaf_source/` deeply (prompts.py, tool_agent.py, solver.py);
+  (3) iterate via the notebook's customization hook (cell "6. Customization hook"): prompt
+  tweaks, per-game budget, context compaction — validate on the 25 offline games before each
+  submit; (4) milestone 2 = Sept 30 ($37.5K pool), final = Nov 2.
 
 ## Key decisions
 | Date | Decision | Why |

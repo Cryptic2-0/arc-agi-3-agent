@@ -227,3 +227,30 @@ Format per entry:
   MAX_ACTIONS=600 differ). Pushed **kernel version 4**, Phase A polling. User confirmed a submission slot
   is free today → submitting v7 (version 4).
 - **Note:** sweeps kept dying on session teardown; final v7 number came from a foreground run that survived.
+
+## 2026-07-07 — v7 LB CRASHED (0.06); milestone-1 winners open-sourced; PIVOT to duck harness
+- **What:** Session resumed after 11-day gap. Checked submissions: **v7 scored 0.06 on LB**
+  (sub `54087945`, 2026-06-26) — catastrophic vs v4's 0.24, despite v7 being the best offline
+  (8/183). Likely kernel crash/timeout on hidden games — never diagnosed; moot now (see pivot).
+  ~10 daily submission slots went unused since 6/26.
+- **LB state:** exploded since milestone 1 (June 30). Top = **1.56** (Mathurin Ache); top-20 all
+  ≥1.30. Our 0.24 is far off the pace. Cause: milestone-1 winner **open-sourced** (required by
+  rules) and everyone forked it — a verbatim fork (`caoyupeng/1-21-from-great-team-tufa-labs`)
+  scores **1.21**.
+- **Winner (Tufa Labs "duck harness", Jeroen Cottaar et al., 1.21):** LLM agent after all —
+  but LOCAL: Qwen3.6-27B-FP8 on vLLM, Kaggle RTX Pro 6000 (96GB). Agent = "duck": gets ASCII
+  grid + connected-component segmentation (raw grid hidden), a fresh Python sandbox per call,
+  calls `action(...)` from code; keeps a persistent "world model" note across turns; 64k context
+  with oldest-message eviction; 28 concurrent games, 7920s/game cap. Writeup:
+  kaggle discussion 717133. Key insights from writeup: hand-crafted tools HURT (let the model
+  write its own analysis code); prompt engineering against hallucination mattered; better base
+  model + multimodal drove gains; variance is large (±0.4 across runs).
+- **Action taken:** pulled winner source (dataset `jeroencottaar/taaf-kaggle-source-share` →
+  `external/taaf_source/`), pulled the 1.21 notebook, pushed a verbatim private fork:
+  **`soumyacryptic/taaf-duck-harness-fork` v1** (3 datasets attached, machine_shape
+  NvidiaRtxPro6000, no internet). Status QUEUED. Save&Run plays the 25 offline games first
+  (hours of GPU).
+- **Next:** when version 1 completes → submit: `kaggle competitions submit arc-prize-2026-arc-agi-3
+  -k soumyacryptic/taaf-duck-harness-fork -v 1 -f submission.parquet` (today's slot FREE, last
+  used 6/26). Expected ~1.2±0.4 vs current 0.24. Then improve: prompts/context-compaction/model
+  swap via the customization hook; consider graph-explorer as cheap fallback layer.

@@ -62,3 +62,43 @@ and the data says it beats both random and LLM agents by 3–4×.
 - https://arxiv.org/html/2603.24621v1  (ARC-AGI-3 technical report)
 - https://arcprize.org/competitions/2026/arc-agi-3
 - https://www.joinplank.com/articles/arc-prize-langgraph
+
+---
+
+# ADDENDUM 2026-07-07 — Milestone-1 open-source recon (supersedes the DECISION above)
+
+## What happened
+Milestone 1 (June 30) forced winners to open-source. LB reset: top = 1.56, top-20 ≥ 1.30,
+nearly all forks of the winner. Our graph line (0.24 best) is obsolete.
+
+## Winner: Tufa Labs "duck harness" (1.21 LB; MIT/CC0 per comp rules)
+- Kernel: `jeroencottaar/tufa-labs-duck-harness-june-30-milestone-winner` (readable) /
+  `taaf-duck-harness-kaggle` v21 (the scoring run). Writeup: comp discussion **717133**.
+  Source snapshot: dataset `jeroencottaar/taaf-kaggle-source-share` → local `external/taaf_source/`.
+- Architecture: **LLM agent + Python tool sandbox** ("the duck"), via TAAF framework.
+  - Model: **Qwen3.6-27B-FP8** served by local vLLM (wheelhouse dataset; vllm 0.19, torch 2.10),
+    Kaggle **RTX Pro 6000** (96GB), 64k max-model-len, thinking on, temp 0.6.
+  - The model NEVER sees the raw numeric grid. It gets: `current_frame.ascii`,
+    `current_frame.segmentation` (connected components, hashes, containment, adjacency),
+    `history`/`transitions`, `valid_actions`, `last_action_result` (board_changed,
+    level_completed, ...). Actions: UP/DOWN/LEFT/RIGHT/SPACE/MOUSE(row,col).
+  - Fresh sandbox per tool call; stdlib-allowlist imports; calls `action(...)` inline.
+  - Persistent "world model" note across turns; context eviction (oldest first) for
+    indefinite play. Multimodal: current grid as image, 4× upscale.
+  - Runtime: 28 games concurrent, 7920s/game cap, soft notebook deadline.
+- Author-named improvement levers: context compaction/memory system, better visual
+  perception, stronger base model. Reported variance ±0.4 → validate over multiple runs.
+
+## Other intel
+- 2nd place: `ruichardliu/milestone1-2nd-solution`. 3rd: `mbmmurad/...-lb-0-86-...` (0.86).
+- Gemma-4-31B reflection agent kernel (`ko0kip/arc-agi-3-gemma-4-31b-reflection-agent`) —
+  "Gemma 4 31B QAT + LeWM/JEPA dynamics model", 0.79 public. Alternative model family to test.
+- Symbolica "Agentica SDK": claims 36% on the 25 public games (blog, unverified, likely
+  API-model-driven → not Kaggle-legal, but ideas may transfer).
+- Papers: "Executable World Models for ARC-AGI-3" (arxiv 2605.05138), "Explore Before You
+  Solve" (arxiv 2605.25931).
+
+## NEW DECISION
+Fork the duck (done: `soumyacryptic/taaf-duck-harness-fork`), replicate ~1.2, then iterate
+via the customization hook + TAAF source. Offline validation stays: the notebook's
+non-submission mode plays the 25 public games end-to-end.

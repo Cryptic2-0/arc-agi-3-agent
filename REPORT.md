@@ -64,6 +64,28 @@ Source: competition page + repo README/changelog.
   `available_actions` per frame (0.9.2). Run: `uv run main.py --agent=random --game=ls20`.
 - UNKNOWN still: real per-run quotas/time budget and rate limits on the *scoring* harness.
 
+### The milestone-1 reality check (2026-07-07)
+5. **"LLMs lose" is now FALSE at the harness level.** Milestone-1 winner (Tufa Labs duck
+   harness, 1.21 LB; forks reproduce 1.21) IS an LLM agent — but grounded: local Qwen3.6-27B-FP8
+   (vLLM, RTX Pro 6000 96GB), sees ASCII grid + connected-component segmentation (raw grid
+   hidden), writes Python in a per-call-fresh sandbox, executes `action(...)` from code, keeps a
+   persistent world-model note, 64k context with eviction. The preview-era "LLMs score ~0.3%"
+   datapoint was about naive API-driven LLM loops, not about a code-tool harness around a local
+   model. (Source: kernel `jeroencottaar/tufa-labs-duck-harness-june-30-milestone-winner`,
+   writeup discussion 717133, source in `external/taaf_source/`.)
+6. **Open-sourcing milestones reset the LB.** Rules force winners to open-source at each
+   milestone → post-June-30, top-20 = duck forks (1.30–1.56). Competing = fork the frontier +
+   add deltas, not build from scratch. Same will happen at milestone 2 (Sept 30).
+7. **Offline-best ≠ LB-safe:** v7 (best offline, 8/183) scored **0.06** on LB — a crash/timeout
+   profile, not a performance profile. Any submission needs a full clean Save&Run on Kaggle
+   hardware first; offline wins don't transfer if the kernel dies on hidden games.
+
 ## Superseded beliefs
 <!-- date | belief we held | what overruled it (result/source) -->
-*(none yet)*
+- 2026-07-07 | "Build no-LLM graph exploration; LLM agents are the wrong path (~0.3%)" |
+  Milestone-1 winner = LLM+Python-tool harness on a LOCAL 27B model, 1.21 LB vs our graph 0.24.
+  The graph-vs-LLM dichotomy was wrong; the real variable is grounding (code tool + segmentation
+  + world-model memory) and a strong local model, not LLM-vs-no-LLM.
+- 2026-07-07 | "Offline scorer predicts LB direction" (REPORT §3) | v7: offline best (8/183) →
+  LB 0.06 (crash). Offline predicts direction only when the kernel survives; runtime robustness
+  on Kaggle is a separate, gating axis.

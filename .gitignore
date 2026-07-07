@@ -21,3 +21,6 @@ scratchpad/
 
 # Competition wheels (large binaries)
 arc_agi_3_wheels/
+
+# Vendored third-party winner source dumps + notebook forks (not authored here)
+external/
