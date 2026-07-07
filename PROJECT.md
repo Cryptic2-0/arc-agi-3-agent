@@ -19,32 +19,41 @@ THE number = **Total score (0–100%)**, computed:
 - Eval set: **110 private games, never seen** (55 → public LB, 55 → private LB). 25 public
   games shipped locally (`environment_files/`) for dev only.
 
-## Status  (rewritten 2026-07-07 — STRATEGY PIVOT)
-- **Phase:** GraphExplorer line RETIRED (plateaued 0.24; v7 crashed on LB = 0.06). **Pivoted to
-  the open-sourced milestone-1 winner: Tufa Labs "duck harness"** (LLM agent, local Qwen3.6-27B-FP8
-  on vLLM, RTX Pro 6000). A verbatim public fork scores **1.21** — 5× our best.
+## Status  (updated 2026-07-07 evening — duck fork = 1.07 LB; v2 in flight)
+- **Phase:** duck-harness fork line. **v1 (verbatim fork) = 1.07 public LB** (sub `54414740`;
+  offline mean 1.11, 14/25 games at 0, 0 games fully won). GraphExplorer retired (best 0.24).
 - **LB context (2026-07-07):** top = **1.56**; top-20 ≥ 1.30, nearly all duck-harness forks.
-  Ours: v4 = 0.24 (sub `54035711`). v7 = 0.06 (crashed; never diagnosed, moot).
-- **In flight:** private fork **`soumyacryptic/taaf-duck-harness-fork` version 1** pushed
-  (verbatim 1.21 notebook; datasets: `driessmit1/arc3-vllm-h100-wheelhouse-v3`,
-  `jeroencottaar/taaf-kaggle-source`, `driessmit1/vrfai-qwen3-6-27b-fp8-hf-snapshot`;
-  `machine_shape: NvidiaRtxPro6000`; internet OFF). Save&Run takes hours (plays 25 offline games).
-  **When complete → submit** (1/day slot, free as of 2026-07-07):
-  `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 1 -f submission.parquet`
+  We're at 1.07 with zero customization → headroom is real.
+- **In flight:** **kernel version 2** (Save&Run started 2026-07-07, ~7h: 3 offline passes).
+  v2 = customization-hook-only patches fixing the **post-game-over paralysis** found in v1
+  transcripts: harness auto-resets after GAME_OVER but prompt said only "The game is over." →
+  model refused to act for rest of run (ls20 20/61 turns idle, ft09 14/66). Patches: explicit
+  auto-reset messaging in user prompt + system-prompt game-over addendum + `bm.n_passes=3`
+  (offline only). Monitor: `external/my_duck_fork/monitor_v2.sh`.
+  **Decision rule:** submit v2 only if 3-pass mean ≥ 1.11 AND ls20/ft09/sc25/cn04/m0r0/r11l
+  don't regress. Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 2 -f submission.parquet`
 - **Winner source code:** `external/taaf_source/` (TAAF framework + ARC3-Inference "duck").
   Writeup: Kaggle discussion 717133. Improvement levers named by authors: context
   compaction/memory, better visual perception, better base model. Variance ±0.4 — don't
   over-read single LB results.
+- **Deployed config facts (from bundle + solver.pkl):** analyzer context **32k** (vLLM
+  max_model_len 64k), concurrency 28, 7920s/game, unlimited tool steps, temp 0.6, top_p 0.95,
+  prefix caching on, yield 60s. All games run concurrently → binding constraint = aggregate
+  GPU decode (~9 tok/s/game, ~70k tokens/game/window). Tunables all reachable from the
+  notebook's customization hook (cell 8): monkey-patch `inference.agent.tool_agent` (prompts,
+  `_build_system_prompt`, module constants) + `bm`/`bm.solver` fields — ToolAgent instances
+  are created per-game AFTER the hook runs (solver.py:1189).
 - **Pipeline (dev, old graph line):** `cd ARC-AGI-3-Agents && python -m uv run run_offline.py --agent=graphexplorer`.
   Still useful as cheap baseline/fallback layer.
 - **Token:** `KGAT_…` = Kaggle access token at `ARC-AGI-3-Kaggle-Starter/.kaggle/access_token`.
   CLI: `export KAGGLE_API_TOKEN=$(cat .kaggle/access_token)`. User=`soumyacryptic`.
 - **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private).
-- **Next actions:** (1) submit fork v1 when run completes → establish ~1.2 baseline;
-  (2) study `external/taaf_source/` deeply (prompts.py, tool_agent.py, solver.py);
-  (3) iterate via the notebook's customization hook (cell "6. Customization hook"): prompt
-  tweaks, per-game budget, context compaction — validate on the 25 offline games before each
-  submit; (4) milestone 2 = Sept 30 ($37.5K pool), final = Nov 2.
+- **Next actions:** (1) when v2 Save&Run completes → compare 3-pass mean vs 1.11 + per-game
+  on the game-over set → submit v2 if decision rule passes (slot resets UTC midnight);
+  (2) next levers, in rough order: dc22-style indecision (99 tool calls, 44 actions — model
+  investigates forever), context compaction quality at 32k, tool-output budget (1024 tok),
+  temperature sweep, stronger base model swap; (3) milestone 2 = Sept 30 ($37.5K pool),
+  final = Nov 2.
 
 ## Key decisions
 | Date | Decision | Why |

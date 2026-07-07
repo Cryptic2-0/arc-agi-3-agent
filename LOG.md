@@ -254,3 +254,29 @@ Format per entry:
   -k soumyacryptic/taaf-duck-harness-fork -v 1 -f submission.parquet` (today's slot FREE, last
   used 6/26). Expected ~1.2±0.4 vs current 0.24. Then improve: prompts/context-compaction/model
   swap via the customization hook; consider graph-explorer as cheap fallback layer.
+
+## 2026-07-07 (later) — fork v1 scored LB 1.07; v2 (game-over fix) in flight
+- **Result:** sub `54414740` (verbatim duck fork) = **1.07 public LB** (offline mean 1.11 on the
+  25 public games; 0 games fully won, 14/25 scored 0). 4.5x our GraphExplorer best (0.24).
+  Consistent with the 1.21 fork ± the authors' stated ±0.4 variance.
+- **Failure-mode analysis (v1 transcripts):** biggest visible pathology = **post-game-over
+  paralysis**. The harness auto-resets the level after GAME_OVER (solver.py:276) but the next
+  prompt only says "The game is over." (tool_agent.py:1209-1210). Model writes "game is over,
+  stop acting" into its persistent world-model note and refuses to act for the rest of the run:
+  ls20 wasted 20/61 turns, ft09 14/66, sc25/tn36/cn04 also affected. Each turn ≈ 80-130s of
+  shared GPU → up to ~1/3 of a game's budget burned idle.
+- **Other findings:** deployed analyzer context = **32k** (not 64k; vLLM serves 64k max_model_len);
+  concurrency 28, 7920s/game cap, unlimited tool steps, temp 0.6, prefix caching on. All games
+  run concurrently for the full window → binding constraint = aggregate GPU decode (~222 tok/s
+  split 25-28 ways ≈ 9 tok/s/game, ~70k tokens/game). Request errors: 1/game (terminal timeout
+  at budget end) — not systemic.
+- **v2 shipped (kernel version 2):** customization-hook patches only (no source-dataset fork):
+  (1) user-prompt line "The game is over." → explicit "environment ALREADY auto-reset; GAME_OVER
+  is never permanent; do NOT stop playing / do NOT write game-over into world model";
+  (2) system-prompt "Game-over handling" addendum (auto-reset semantics + treat each death as
+  information, change plan);
+  (3) `bm.n_passes = 3` offline only (rerun branch forces 1) → 75 runs for lower-variance eval,
+  ~7h fits the ~8.7h soft deadline.
+- **Decision rule for tomorrow's slot:** submit v2 only if 3-pass mean ≥ v1's 1.11 AND the
+  game-over-affected games (ls20/ft09/sc25/cn04/m0r0/r11l) don't regress. Monitor:
+  `external/my_duck_fork/monitor_v2.sh` (poll only, no auto-submit).
