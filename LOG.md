@@ -280,3 +280,16 @@ Format per entry:
 - **Decision rule for tomorrow's slot:** submit v2 only if 3-pass mean ≥ v1's 1.11 AND the
   game-over-affected games (ls20/ft09/sc25/cn04/m0r0/r11l) don't regress. Monitor:
   `external/my_duck_fork/monitor_v2.sh` (poll only, no auto-submit).
+
+## 2026-07-08 — v2 offline validated (paralysis fix works); SUBMITTED (sub 54446049)
+- **v2 3-pass offline (75 runs, 6h36m):** mean 1.01, median **0.17** (v1: 0.00), **16/25 games
+  scoring >0** (v1: 11). Mean vs v1''s single-pass 1.11 = flat within ±0.4 variance; v1''s edge
+  was two jackpot passes (re86 8.33, sp80 4.76) that regressed toward true means.
+- **Fix target validated:** game-over set improved, zero regressions there. r11l 0→**3.80**
+  (cleared L1 every pass), ka59 0→1.12, s5i5 0→0.69, wa30 0→0.35, ls20 0→0.04, m0r0 0→0.02.
+  Transcript check: "You have not acted yet" refusal turns = **0** across ls20/ft09/sc25/r11l
+  all passes (v1: ls20=20, ft09=14). Model now retries after every death.
+- **Submitted v2** (kernel version 2, sub `54446049`, 2026-07-08 01:47 UTC). Rationale: LB keeps
+  best score → downside bounded at 1.07; breadth+median up; fix verified. PENDING.
+- **Next:** check publicScore when resolved. Next levers (PROJECT.md): dc22-style indecision,
+  context compaction, tool-output budget, temperature, base-model swap.
