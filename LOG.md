@@ -318,3 +318,24 @@ Format per entry:
 - **Decision rule:** submit v3 only if 3-pass mean clearly > 1.01 (target ≥1.2) or median/breadth
   jump without mean loss. Monitor: `monitor_v2.sh` (bg). Today's submit slot unused → can submit
   tonight if run validates (~17:30 UTC ETA).
+
+## 2026-07-09 (later) — v3 offline WORSE (0.86); thinking-off rejected; v4 (thinking on + act-bias) in flight
+- **v3 3-pass offline (75 runs, 6h36m):** mean **0.86** / median **0.08** vs v2's 1.01 / 0.17.
+  Decision rule failed → v3 NOT submitted; v1's 1.07 still stands.
+- **Why no-think lost:** actions rose only **1.48×** (20103 vs 13564), not the predicted 3-5×.
+  Generated tok/s DROPPED 224→178 — with short replies, wallclock overhead (sandbox exec, env
+  stepping, per-request overhead) becomes the binder, not GPU decode. Meanwhile per-turn
+  reasoning got worse: planning-gated games collapsed (ka59 1.12→0.16, lp85 2.78→1.39,
+  su15 2.22→1.02, s5i5 0.69→0, wa30 0.35→0).
+- **What no-think won (keep for later):** exploration-gated games jumped — ar25 0.72→**3.33**,
+  ls20 0.04→**1.09**, ft09 0→0.72, cd82 0→0.36, cn04 0→0.58 (first-ever nonzero for cd82/cn04);
+  zeros 8→6, 19/25 games scoring. Split suggests the act-bias/batching prompts (bundled in v3)
+  drive breadth, thinking drives depth → want both.
+- **v4 shipped (kernel version 4, pushed 2026-07-09 17:38 UTC):** thinking back ON, default
+  sampling restored (temp 0.6/top_p 0.95); act-bias/batching addendum KEPT (+ "keep private
+  reasoning to a few hundred words" line); v2 game-over fix kept. `bm.n_passes=2` (not 3):
+  fits GPU-quota headroom AND finishes ~22:45 UTC → today's unused submit slot still usable
+  if it validates. v4 vs v2 isolates the act-bias addendum under thinking.
+- **Decision rule:** submit v4 tonight if 2-pass mean > 1.01 or breadth/median up without mean
+  loss; else hold 1.07 and design v5 (candidates: per-turn output cap ~3k to cut thinking tail,
+  partial thinking, compaction quality).

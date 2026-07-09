@@ -27,13 +27,16 @@ THE number = **Total score (0–100%)**, computed:
 - **Key measurement (v2 transcripts):** thinking eats ~85% of the ~70k generated-token budget
   per game → only ~150 env actions/game, avg batch 1-2. Completion gates score → **action
   throughput is THE binding constraint**. Yield 60s = max turn duration, not a floor.
-- **In flight: kernel version 3** (pushed 2026-07-09 10:23 UTC, ~7h, 3 offline passes).
-  Hook-cell-only: thinking OFF (`_ta._LOCAL_ANALYZER_ENABLE_THINKING=False`), no-think sampling
-  (temp 0.7, top_p 0.8), "Action-throughput policy" system addendum (short replies, act every
-  turn, batched probes, exact sequences once confident), v2 game-over fix kept.
-  **Decision rule:** submit v3 only if 3-pass mean clearly > 1.01 (target ≥1.2) or
-  median/breadth jump without mean loss. Today's submit slot unused.
-  Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 3 -f submission.parquet`
+- **v3 (thinking OFF) offline = 0.86/0.08 — REJECTED, not submitted.** Actions only 1.48× up
+  (tok/s dropped 224→178: wallclock overhead binds when replies are short, not GPU decode);
+  planning games collapsed (ka59/lp85/su15 down) while exploration games jumped (ar25 3.33,
+  ls20 1.09, cd82/cn04 first nonzero; zeros 8→6). Lesson: act-bias prompts → breadth,
+  thinking → depth; need both.
+- **In flight: kernel version 4** (pushed 2026-07-09 17:38 UTC, 2 passes, ETA ~22:45 UTC).
+  = v2 + act-bias/batching addendum, thinking ON, default sampling. Isolates the addendum.
+  **Decision rule:** submit tonight (slot unused, deadline UTC midnight) if 2-pass mean > 1.01
+  or breadth/median up without mean loss.
+  Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 4 -f submission.parquet`
 - **Winner source code:** `external/taaf_source/` (TAAF framework + ARC3-Inference "duck").
   Writeup: Kaggle discussion 717133. Improvement levers named by authors: context
   compaction/memory, better visual perception, better base model. Variance ±0.4 — don't
