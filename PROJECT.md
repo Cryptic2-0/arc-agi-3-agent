@@ -19,19 +19,21 @@ THE number = **Total score (0–100%)**, computed:
 - Eval set: **110 private games, never seen** (55 → public LB, 55 → private LB). 25 public
   games shipped locally (`environment_files/`) for dev only.
 
-## Status  (updated 2026-07-07 evening — duck fork = 1.07 LB; v2 in flight)
-- **Phase:** duck-harness fork line. **v1 (verbatim fork) = 1.07 public LB** (sub `54414740`;
-  offline mean 1.11, 14/25 games at 0, 0 games fully won). GraphExplorer retired (best 0.24).
+## Status  (updated 2026-07-09 — v2 LB 0.57, v3 thinking-off in flight; best = 1.07)
+- **Phase:** duck-harness fork line. **Best LB = 1.07 (v1, sub `54414740`)**. v2 (game-over
+  prompt fix) offline mean 1.01/median 0.17/16-of-25 scoring but **LB 0.57** — 1-pass LB draw
+  at ±0.4 variance; standing unaffected (LB keeps best). GraphExplorer retired (0.24).
 - **LB context (2026-07-07):** top = **1.56**; top-20 ≥ 1.30, nearly all duck-harness forks.
-  We're at 1.07 with zero customization → headroom is real.
-- **In flight:** **kernel version 2** (Save&Run started 2026-07-07, ~7h: 3 offline passes).
-  v2 = customization-hook-only patches fixing the **post-game-over paralysis** found in v1
-  transcripts: harness auto-resets after GAME_OVER but prompt said only "The game is over." →
-  model refused to act for rest of run (ls20 20/61 turns idle, ft09 14/66). Patches: explicit
-  auto-reset messaging in user prompt + system-prompt game-over addendum + `bm.n_passes=3`
-  (offline only). Monitor: `external/my_duck_fork/monitor_v2.sh`.
-  **Decision rule:** submit v2 only if 3-pass mean ≥ 1.11 AND ls20/ft09/sc25/cn04/m0r0/r11l
-  don't regress. Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 2 -f submission.parquet`
+- **Key measurement (v2 transcripts):** thinking eats ~85% of the ~70k generated-token budget
+  per game → only ~150 env actions/game, avg batch 1-2. Completion gates score → **action
+  throughput is THE binding constraint**. Yield 60s = max turn duration, not a floor.
+- **In flight: kernel version 3** (pushed 2026-07-09 10:23 UTC, ~7h, 3 offline passes).
+  Hook-cell-only: thinking OFF (`_ta._LOCAL_ANALYZER_ENABLE_THINKING=False`), no-think sampling
+  (temp 0.7, top_p 0.8), "Action-throughput policy" system addendum (short replies, act every
+  turn, batched probes, exact sequences once confident), v2 game-over fix kept.
+  **Decision rule:** submit v3 only if 3-pass mean clearly > 1.01 (target ≥1.2) or
+  median/breadth jump without mean loss. Today's submit slot unused.
+  Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 3 -f submission.parquet`
 - **Winner source code:** `external/taaf_source/` (TAAF framework + ARC3-Inference "duck").
   Writeup: Kaggle discussion 717133. Improvement levers named by authors: context
   compaction/memory, better visual perception, better base model. Variance ±0.4 — don't
@@ -48,12 +50,12 @@ THE number = **Total score (0–100%)**, computed:
 - **Token:** `KGAT_…` = Kaggle access token at `ARC-AGI-3-Kaggle-Starter/.kaggle/access_token`.
   CLI: `export KAGGLE_API_TOKEN=$(cat .kaggle/access_token)`. User=`soumyacryptic`.
 - **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private).
-- **Next actions:** (1) when v2 Save&Run completes → compare 3-pass mean vs 1.11 + per-game
-  on the game-over set → submit v2 if decision rule passes (slot resets UTC midnight);
-  (2) next levers, in rough order: dc22-style indecision (99 tool calls, 44 actions — model
-  investigates forever), context compaction quality at 32k, tool-output budget (1024 tok),
-  temperature sweep, stronger base model swap; (3) milestone 2 = Sept 30 ($37.5K pool),
-  final = Nov 2.
+- **Next actions:** (1) when v3 Save&Run completes → compare vs v2 baseline (mean 1.01 /
+  median 0.17 / 16 games scoring) → submit if decision rule passes; (2) if thinking-off tanks,
+  fallback v4 = thinking ON + act-bias/batching prompts only; (3) later levers: partial
+  thinking (first N turns only — needs thread-safe patch, module global is racy), context
+  compaction quality at 32k, tool-output budget (1024 tok), base-model swap;
+  (4) milestone 2 = Sept 30 ($37.5K pool), final = Nov 2.
 
 ## Key decisions
 | Date | Decision | Why |

@@ -293,3 +293,28 @@ Format per entry:
   best score → downside bounded at 1.07; breadth+median up; fix verified. PENDING.
 - **Next:** check publicScore when resolved. Next levers (PROJECT.md): dc22-style indecision,
   context compaction, tool-output budget, temperature, base-model swap.
+
+## 2026-07-09 — v2 LB = 0.57 (v1's 1.07 stands); v3 = thinking-off + act-bias, in flight
+- **v2 publicScore = 0.57** (sub 54446049) vs v1's 1.07. LB keeps best → standing unchanged at
+  1.07. Read: offline said v2 ≈ v1 on mean (1.01 vs 1.11, 75 runs vs 1 pass) with better median;
+  a 1-pass LB draw at ±0.4 stated variance can land 0.57 without the fix being net-negative.
+  v1's 1.07 itself is one draw — true mean likely ~0.8-1.0 for both. Conclusion: prompt-margin
+  tweaks won't reliably beat 1.07; need a lever that shifts expected score, not variance.
+- **v2 transcript profiling (39/75 transcripts):** ~64 turns/game/pass, avg action batch 1-2,
+  **thinking ≈ 250K chars/game/pass ≈ ~85% of the ~70k generated-token budget** → only ~150 env
+  actions/game. Completion gates score; action throughput is the binding constraint, and it's
+  being spent on chain-of-thought. Yield=60s is a max-turn-duration (not a floor) → nothing
+  caps faster turns.
+- **v3 shipped (kernel version 3, pushed 2026-07-09 10:23 UTC):** hook-cell-only again:
+  (1) `_ta._LOCAL_ANALYZER_ENABLE_THINKING = False` (Qwen3 no-think; read at request time in
+  `_chat_completion`, tool_agent.py:1297; smoke test in kaggle.py already exercises
+  enable_thinking=False against this vLLM config);
+  (2) no-think recommended sampling: temp 0.6→0.7, top_p 0.95→0.8;
+  (3) system addendum "Action-throughput policy": 2-4 sentence replies, act every turn,
+  batched probes while mechanics unknown (batches auto-stop at level change/game-over),
+  exact planned sequence once confident (no padding — efficiency metric);
+  (4) v2 game-over fix kept verbatim; (5) `bm.n_passes=3` offline, rerun forces 1.
+  Expected effect: 3-5× action throughput; risk: no-think Qwen reasons worse per turn.
+- **Decision rule:** submit v3 only if 3-pass mean clearly > 1.01 (target ≥1.2) or median/breadth
+  jump without mean loss. Monitor: `monitor_v2.sh` (bg). Today's submit slot unused → can submit
+  tonight if run validates (~17:30 UTC ETA).
