@@ -32,11 +32,11 @@ THE number = **Total score (0–100%)**, computed:
   planning games collapsed (ka59/lp85/su15 down) while exploration games jumped (ar25 3.33,
   ls20 1.09, cd82/cn04 first nonzero; zeros 8→6). Lesson: act-bias prompts → breadth,
   thinking → depth; need both.
-- **In flight: kernel version 4** (pushed 2026-07-09 17:38 UTC, 2 passes, ETA ~22:45 UTC).
-  = v2 + act-bias/batching addendum, thinking ON, default sampling. Isolates the addendum.
-  **Decision rule:** submit tonight (slot unused, deadline UTC midnight) if 2-pass mean > 1.01
-  or breadth/median up without mean loss.
-  Submit: `kaggle competitions submit arc-prize-2026-arc-agi-3 -k soumyacryptic/taaf-duck-harness-fork -v 4 -f submission.parquet`
+- **v4 (thinking ON + act-bias/batching addendum) offline = 1.35/0.30/20-of-25 — BEST of the
+  line. SUBMITTED 2026-07-10 04:25 UTC (sub `54515519`, kernel version 4), PENDING.** Depth
+  kept (ka59 3.24, tu93 4.11) + breadth gained (ft09 0→2.12, cd82 0→1.85, sc25 first nonzero
+  1.17; zeros 8→5). Caveats: 2-pass mean (noisier); offline→LB correlation loose (v2: 1.01
+  offline → 0.57 LB).
 - **Winner source code:** `external/taaf_source/` (TAAF framework + ARC3-Inference "duck").
   Writeup: Kaggle discussion 717133. Improvement levers named by authors: context
   compaction/memory, better visual perception, better base model. Variance ±0.4 — don't
@@ -53,10 +53,10 @@ THE number = **Total score (0–100%)**, computed:
 - **Token:** `KGAT_…` = Kaggle access token at `ARC-AGI-3-Kaggle-Starter/.kaggle/access_token`.
   CLI: `export KAGGLE_API_TOKEN=$(cat .kaggle/access_token)`. User=`soumyacryptic`.
 - **GitHub:** https://github.com/Cryptic2-0/arc-agi-3-agent (private).
-- **Next actions:** (1) when v3 Save&Run completes → compare vs v2 baseline (mean 1.01 /
-  median 0.17 / 16 games scoring) → submit if decision rule passes; (2) if thinking-off tanks,
-  fallback v4 = thinking ON + act-bias/batching prompts only; (3) later levers: partial
-  thinking (first N turns only — needs thread-safe patch, module global is racy), context
+- **Next actions:** (1) check sub 54515519 publicScore when it resolves; (2) study remaining
+  zeros dc22/g50t/sk48/tr87/wa30 (sk48 721 actions/0 levels + wa30 578/0 = flailing loops;
+  dc22 94 actions = indecision) in output_v4 transcripts; (3) later levers: per-turn output
+  cap (~3k) to cut thinking tail, partial thinking (needs thread-safe patch), context
   compaction quality at 32k, tool-output budget (1024 tok), base-model swap;
   (4) milestone 2 = Sept 30 ($37.5K pool), final = Nov 2.
 
