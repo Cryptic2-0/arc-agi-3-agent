@@ -339,3 +339,20 @@ Format per entry:
 - **Decision rule:** submit v4 tonight if 2-pass mean > 1.01 or breadth/median up without mean
   loss; else hold 1.07 and design v5 (candidates: per-turn output cap ~3k to cut thinking tail,
   partial thinking, compaction quality).
+
+## 2026-07-10 — v4 offline BEST (1.35/0.30, 20 of 25 scoring); SUBMITTED (sub 54515519)
+- **v4 2-pass offline (50 runs, 4h24m):** mean **1.35** / median **0.30** / **20/25 games
+  scoring** — best offline result of the fork line (v2: 1.01/0.17/17; v1: 1.11/0.00/11).
+  tok/s back to 235 (GPU decode binds again with thinking on); actions/game 181→218 (+20%).
+- **Read:** act-bias/batching addendum under thinking = the win. Depth kept (ka59 1.12→3.24,
+  tu93 4.11, re86 2.37) AND breadth gained (ft09 0→2.12, cd82 0→1.85, sc25 0→**1.17** first
+  nonzero ever, ls20 0.04→0.96; zeros 8→5). Regressions minor: wa30 0.35→0, s5i5 0.69→0.14,
+  sp80 0.38→0.17.
+- **Note:** 07-09 slot expired unused (v4 finished 22:11 UTC but session was idle overnight;
+  submitted on the 07-10 slot at 04:25 UTC instead — no loss, slots don't accumulate).
+- **Submitted v4** (kernel version 4, sub `54515519`, PENDING). Downside bounded at 1.07
+  (LB keeps best). Caveat: 2-pass mean, noisier than 3-pass; and v2 taught us offline≈LB
+  correlation is loose (1.01 offline → 0.57 LB draw).
+- **Next:** check publicScore when resolved. Remaining zeros dc22/g50t/sk48/tr87/wa30 = next
+  study targets (sk48 721 actions/0 levels + wa30 578/0 = flailing, dc22 94 = indecision).
+  Other levers: per-turn output cap (~3k) to cut thinking tail, compaction quality, model swap.
