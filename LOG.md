@@ -356,3 +356,643 @@ Format per entry:
 - **Next:** check publicScore when resolved. Remaining zeros dc22/g50t/sk48/tr87/wa30 = next
   study targets (sk48 721 actions/0 levels + wa30 578/0 = flailing, dc22 94 = indecision).
   Other levers: per-turn output cap (~3k) to cut thinking tail, compaction quality, model swap.
+
+## 2026-07-10 (later) — v4 LB = 0.78; offline-LB inversion 2-for-2; pivot to recon before more prompt tweaks
+- **Sub 54515519 resolved: publicScore 0.78.** Below v1 verbatim's 1.07. Best stays 1.07.
+- **Pattern:** v2 offline 1.01 → LB 0.57; v4 offline 1.35 → LB 0.78; v1 offline 1.11 → LB 1.07.
+  Both prompt-mod versions beat verbatim offline and lost on LB. Hypotheses: (a) prompt mods
+  overfit 25 public games / hurt hidden 55; (b) both draws unlucky at ±0.4 variance. n=2 can't
+  separate — but expected value of further prompt-only tweaks is now questionable.
+- **Decision: stop stacking prompt tweaks blind. Recon top forks (1.30-1.56) for their deltas,
+  diagnose the inversion, then design v5 around a structural lever, not prompt margin.**
+
+## 2026-07-11 — Recon: LB = max over noisy draws; Tufa graft line found (CC0); v5 = graft adoption
+- **LB structure decoded:** top public kernel by score-sort = `rokaiyasomapti/taaf-duck-harness-kaggle-share-resubmission`
+  = VERBATIM readable duck harness, empty hook, 14 votes. LB tie-clusters (1.56x3, 1.46x3,
+  1.44x3, 1.33/1.32...) = many teams resubmitting the same verbatim notebook daily; Kaggle LB
+  keeps each team's max draw. Top 1.56 ~= max of ~10 draws at mean~1.1-1.2, sd~0.25.
+  **Implication 1: submit EVERY day — an unused slot is a wasted free max-draw.**
+  **Implication 2: raise the draw mean structurally; prompt-margin tweaks don't move it.**
+- **Tufa's own post-milestone dev line found (CC0):** `thtennant/arc3-duck-v7` kernel +
+  `thtennant/taaf-kaggle-source-share-fork` dataset = readable share bundle + `src/taaf-grafts`
+  (11 modules, ~140KB, updated 07-08). Cell-12 composite installer, all flags default-off,
+  every graft fail-to-stock guarded. Flags: `banking` (replay pruned winning trace on a fresh
+  play of same card — score is MAX over plays — direct attack on quadratic efficiency term),
+  `transfer` (hidden runs are clone families; first clone publishes pruned per-level actions
+  to a process-global store, siblings replay = skip cold starts; degrades to no-op on
+  non-clone sets), `recovery` (R1 clear-history refresh on GAME_OVER spirals, R2 bounded
+  scripted probe on lock-in, R3 cross-level notes handoff — built from m0r0/sk48 forensics =
+  exactly our zero-game failure modes), `shortcircuit` (skip provably-no-op repeated batch
+  actions; monotonically non-decreasing), `retry_guard` (bounded retry + vLLM health probe),
+  `efficiency` (report-only per-turn budget note in the user prompt).
+- **Bundle compat:** share-fork dataset = share bundle + grafts ONLY (file-list diff clean).
+  Our kernel's bundle (`jeroencottaar/taaf-kaggle-source`, the original 1.21 line) DIFFERS
+  from the share bundle (tool_agent.py 98KB vs 89KB, runtime_state 2x) → grafts must run on
+  the share bundle they were written for. v5 therefore adopts thtennant's whole stack.
+- **v5 design:** our kernel slug, notebook = v7 copy with (a) cell 12 flags
+  {banking, transfer, shortcircuit, recovery, retry_guard} ON / efficiency OFF (prompts stay
+  verbatim — our prompt mods are 2-for-2 LB losers), (b) run cell offline branch = ALL 25
+  games + one dup of games[0] (exercises transfer publish/replay) instead of v7's [:4] commit
+  gate, (c) n_passes 2 interactive / 1 rerun, (d) keep v7's 11h20m rerun soft-end safety cap,
+  (e) docker image + dataset sources = v7's pins. GPU quota 9.5h free, run ~5h. Decision
+  rule: submit on 07-11 slot if no crash + graft banners print + 25-game mean >= ~1.0.
+
+## 2026-07-11 (later) — v4 zero-game forensics: all end on wall-budget timeout at level 1
+- All five zero games (dc22/g50t/sk48/tr87/wa30) end with `request_error: Read timed out`
+  against local vLLM — the 7920s/game budget expiring mid-request (timeout clamp shrinks:
+  353s→136s→43s). No crashes, no give-ups: full budget spent without clearing level 1.
+- Profiles: wa30 837 actions/0 deaths = deathless flailing (recovery R2 probe case);
+  sk48 447 actions/5 game-overs = death loop (R1 refresh case); dc22 52 actions in 21
+  mega-turns = analysis paralysis; g50t 214/tr87 235 = mid flail. v5's recovery graft was
+  built from exactly these failure modes (its docstring cites sk48/m0r0) → no extra prompt
+  work; measure recovery's effect in the v5 offline run.
+
+## 2026-07-11 (later) — v5 offline 1.60/0.96 BEST; submitted (sub 54561696)
+- **v5 offline (26 games incl. sk48-dup, 2 passes, 4h25m): mean 1.60 / median 0.96 / 17-of-25
+  scoring.** Best of line (v4 1.35/0.30, v2 1.01/0.17, v1 1.11/0.00). 25-game mean ~1.66
+  (dup scored 0, drags the 26-game mean).
+- **Graft evidence:** banner `TAAF_GRAFTS FEATURES={banking,recovery,retry_guard,shortcircuit,
+  transfer} API_VERSION=1` + `[banking] armed` + `[recovery] armed`. Recovery fired 8
+  refreshes (6 death_spiral, 1 post_death_stall, 1 more) + 24 cross-level handoffs. Banking
+  idle: 0 full WINs in 52 runs (banking only fires on a full game win). Transfer machinery
+  exercised but never published (dup = sk48, which never cleared a level; next validation
+  should dup a RELIABLY-SCORING game, e.g. ar25 or tu93, to see a real replay).
+- **Per-game:** big efficiency wins ar25 6.46 / ft09 4.76 / tu93 4.14 / sc25 3.58 / tn36 3.57
+  / vc33 3.36; zeros now cn04, dc22, g50t, ls20, m0r0, sk48, tr87, wa30 (8 vs v4's 5 —
+  ls20/m0r0/cn04 regressed to 0; wa30/sk48/dc22/g50t/tr87 stay stuck). Median 0.30→0.96.
+  Bundle switch (original→readable-share) confounds per-game deltas.
+- **Submitted version 5** (sub `54561696`, 05:53 UTC, PENDING; description records offline
+  numbers). Floor stays 1.07 (LB keeps best). Slot cadence: submit EVERY day from now on.
+
+## 2026-07-12 — v5 LB = 1.20 (NEW BEST); env moved to new machine; 07-12 slot = v5 resubmit
+- **v5 publicScore = 1.20** (sub `54561696`) — new best, up from v1's 1.07. First modified
+  version to BEAT verbatim on LB (inversion pattern broken at n=3: the losers were prompt
+  mods; the winner is structural grafts + verbatim prompts). Offline 1.60 → LB 1.20 is
+  consistent with ±0.4 draw noise around a mean near ~1.2-1.4.
+- **LB context:** top still 1.56×3 (Mathurin Ache / anngle / NoOneAhead); top-20 cutoff 1.36.
+  Our 1.20 is below top-20 but within ~2-3 good draws of the leaders.
+- **Environment moved:** project now on a new Windows machine/profile (`C:\Users\user`, was
+  `C:\Users\ASUS`) — old uv venvs broke (trampoline → missing interpreter). Restored minimal
+  tooling: uv 0.11.28 → `~\.local\bin`, CPython 3.12.13, `uv tool install kaggle` (CLI 2.2.3).
+  Auth via `KAGGLE_API_TOKEN` env var from `ARC-AGI-3-Kaggle-Starter\.kaggle\access_token`
+  still works. NOTE: PowerShell now (not bash); harness venv in ARC-AGI-3-Agents still broken —
+  recreate with `uv sync` if local offline runs are needed again.
+- **07-12 slot used (07:04 UTC): resubmitted kernel version 5 verbatim** (sub `54598846`,
+  PENDING) — zero-risk daily max-draw per the LB-keeps-max strategy; version 5 already
+  survived Phase A+B cleanly (no new code = no timeout/crash risk).
+- **Next:** recon upstream (thtennant graft line updates, top-fork deltas) → design v6 as a
+  structural lever; validate offline on Kaggle GPU before ever submitting.
+
+## 2026-07-12 (later) — Upstream recon → v6 = v11 wall-budget slack-filler; pushed (version 6)
+- **Upstream line decoded (thtennant):** v8 = v7 + shortcircuit; v9/v9b = + recovery +
+  banking (never transfer); **v10 = byte-identical REVERT to v7** (flags back to
+  {efficiency, retry_guard} — his heavy-graft experiments discarded, reason unknown);
+  **v11 (pushed 07-12 00:20 UTC) = v10 + wall-budget slack-filler**, the only delta.
+  Grafts dataset (`taaf-kaggle-source-share-fork`) unchanged since 07-08 — all deltas are
+  notebook-side. Same dataset + docker pins as ours.
+- **The v11 lever (adopted):** a real rerun plays 110 hidden games / 28-way concurrency at
+  the stock 7920s/game ≈ 8.6h of play in the 12h kernel → last ~2.5-3h sit idle. v11 scales
+  `bm.solver.max_runtime_s_per_game` to `clamp(avail·conc/n_games, 7920, 9900)` where avail
+  = 11h20m soft cap − elapsed − 30min drain margin. For 110 games ⇒ ~9600s (+21%/game).
+  Fail-safe (try/except → stock budget); prompts untouched. Directly attacks our measured
+  #1 failure mode: all five v4 zero-games died on wall-budget timeout at level 1
+  (07-11 forensics).
+- **Local state gotcha:** the machine-move left a STALE v4 notebook in
+  `external/my_duck_fork/`; our real v5 only existed on Kaggle. Pulled kernel latest
+  (= v5 exactly as LOG describes), diffed vs upstream v7 to confirm (3 hunks: header,
+  graft flags, dup-gate/n_passes). Kernel pull also DROPS `machine_shape` from metadata —
+  re-added `NvidiaRtxPro6000` by hand before push (else the run lands on the wrong GPU).
+- **v6 built + pushed (kernel version 6, RUNNING since ~07:50 UTC, ETA ~14:00 UTC):**
+  v5 + v11 block verbatim + offline dup game switched games[0](sk48, never cleared) →
+  ar25 (v5's best scorer, 6.46) so transfer publish/replay finally gets a real test;
+  dup change is TRUE_SUBMISSION-guarded = inert on LB. Built via scripted JSON transform
+  (5 replacements, each asserted exactly-once); text-diff verified = intended delta only.
+  Offline cost: 27 games × 2 passes at 9900s ≈ 5.5h play + setup.
+- **Decision rule (07-13 slot):** submit v6 iff run COMPLETE + `TAAF_V11 BUDGET` banner +
+  `TAAF_GRAFTS FEATURES={banking,recovery,retry_guard,shortcircuit,transfer}` banner +
+  no crash/timeout + 25-game mean ≳ 1.6 − noise; watch the 8 zero games (budget was their
+  binding constraint) and the ar25-dup transfer replay. Else resubmit v5 for the daily draw.
+
+## 2026-07-12 (evening) — v6 offline VALIDATED (1.50/0.03, clean, transfer replay works) → submitting on 07-13 slot
+- **v6 offline (26 games incl. ar25-dup × 2 passes, 5h30m54s): mean 1.50 / median 0.03 /
+  16-of-26 rows scoring / 0 full wins.** Run COMPLETE, **zero errors in the whole kernel log**
+  (no Traceback, and — first time ever — not even terminal `request_error` timeouts; the
+  budget's 30-min drain margin absorbed them). All banners fired:
+  `TAAF_GRAFTS FEATURES={banking,recovery,retry_guard,shortcircuit,transfer}`,
+  `TAAF_V11 BUDGET per_game=9900s n_games=26 concurrency=28`, banking/recovery armed.
+- **Transfer graft validated end-to-end (the v6 dup-swap did its job):** 9×
+  `[transfer] replayed levels 0..N` events (dup replayed ar25's published L0 in 5 actions;
+  pass-2 runs replayed pass-1 publishes). ar25-dup scored 1.59 vs ar25's 0.44. On the hidden
+  clone-family games this machinery is now proven live, not just armed.
+- **Sober read on the budget lever OFFLINE:** +25% wall (7920→9900s) flipped NO stuck game —
+  persistent zeros (sk48/wa30/dc22/g50t/tr87) all stayed 0, and cd82/sc25/ls20/m0r0/cn04
+  flip-flopped by draw, not budget. Mean 1.50 vs v5's 1.60 = within noise (per-pass mean sd
+  ≈ 0.45); median 0.96→0.03 is draw noise on a fat-tailed distribution (jackpots: re86 8.33,
+  vc33 7.45, ft09 7.14). Extra time also barely adds tokens offline (~78.8k/run vs ~70k;
+  GPU decode still splits 26 ways). Conclusion: stuck games are capability-bound (perception/
+  planning), NOT time-bound — the timeout forensics hypothesis was about where they DIE, not
+  what would save them. Budget lever's real value is on the 110-game rerun (+21%/game there,
+  strictly additive: no game gets less time, behavior unchanged, drain margins proven).
+- **DECISION: submit v6 on the 07-13 slot.** Mechanistic downside ≈ 0 (v6 = v5 + strictly
+  more time + validated transfer), Phase A clean. Armed `external/my_duck_fork/submit_v6.ps1`
+  (idempotent: skips if a 07-13 UTC submission already exists) as a background job; if the
+  session dies before 00:05 UTC, run it manually.
+- **Next lever candidates (v7):** the zeros need capability, not time — context compaction
+  quality (evict→summarize into world-model note), per-turn output cap (~3k) A/B, base-model
+  swap (Tufa: historically biggest gains). Banking still never fires (0 full wins in 104
+  logged runs) — worth checking whether hidden games are shorter/winnable.
+
+## 2026-07-12 (afternoon) — v7 = base-model swap to Qwen3.6-35B-A3B FP8 MoE; pushed (version 7)
+- **Deployed-stack facts learned (share-fork bundle, `setup_commands.json` + configs):**
+  vLLM 0.19.0 / torch 2.10.0 / flashinfer 0.6.6 wheelhouse; model constants live at the top
+  of ONE self-contained setup script (MODEL_OWNER/MODEL_SLUG/SERVED_MODEL_NAME); served name
+  `vrfai/Qwen3.6-27B-FP8` feeds env + requests. **The deployed duck is ALREADY multimodal:**
+  `MULTIMODAL_CONTEXT=current_grid` + `MULTIMODAL_UPSCALE=4` send the current grid as a PNG
+  image part every prompt (vision_context.py); the 27B config.json is
+  `Qwen3_5ForConditionalGeneration` WITH vision_config (arch family "qwen3_5" ≠ marketing
+  name 3.6). Also found: `LOCAL_ANALYZER_MAX_OUTPUT` env = clean per-turn max_tokens knob
+  (currently 0 = uncapped) — future output-cap lever needs no code patch.
+- **v7 lever chosen: model swap** to `cmechevalier/face-of-agi-qwen36-35b-fp8-weights` =
+  Qwen3.6-35B-A3B FP8 — `Qwen3_5MoeForConditionalGeneration`, SAME vision-language family
+  (vision_config present, identical chat_template.jinja), ~3B active params → directly
+  attacks the measured binding constraint (aggregate decode ~206 tok/s split 26-28 ways).
+  vLLM 0.19.0 registry lists the MoE arch (checked v0.19.0 tag on GitHub). Snapshot is
+  complete (safetensors index + tokenizer + preprocessor configs; 40 layer shards ≈ 30.7GB;
+  24 downloads → other competitors likely already on it). Weights 31GB < dense's 36GB →
+  VRAM fine. Residual risk: MoE-VL loading quirks in the pinned wheelhouse (e.g. the extra
+  mtp.safetensors) — if load fails, kernel errors within ~25min, costing <1h GPU; v6 stays
+  the safe submittable.
+- **Implementation:** notebook-level string-patch of the setup command right before
+  execution (MODEL_OWNER/MODEL_SLUG swapped; SERVED_MODEL_NAME kept verbatim so solver.pkl/
+  env/request references still match; raises loudly if constants missing so we can never
+  silently validate the wrong weights). Metadata: model dataset attachment swapped.
+  Built via scripted transform (4 replacements, asserted exactly-once); diff verified.
+- **Pushed version 7, RUNNING since ~14:20 UTC, ETA ~20:30 UTC.** GPU quota: 24.3h remaining
+  before this run (resets 07-18) — v7 uses ~6h, fine. Key validation metrics: `TAAF_V7 MODEL
+  SWAP` banner, vLLM smoke test passes, generated tok/s (expect ≫206), 25-game mean vs
+  v6 1.50 / v5 1.60, zeros count, per-game token counts (expect ≫80k).
+- **07-13 slot decision unchanged:** v6 auto-submit stays armed (safe, proven). If v7
+  validates spectacularly before 00:05 UTC, submitting v7 instead is the user's call —
+  kill the bg job / edit submit_v6.ps1 to -v 7 in that case.
+
+## 2026-07-12 (17:40 UTC) — v5 resubmit draw = **1.31 NEW BEST**; max-draw strategy validated
+- **Sub `54598846` (v5 verbatim resubmit) resolved: publicScore 1.31** — new best (draws so
+  far on the identical notebook: 1.20, 1.31). The LB-keeps-max/daily-resubmit strategy is
+  paying exactly as modeled; top-20 cutoff (1.36) is within ~1-2 good draws.
+- v7 (MoE swap) passed the model-load window (3h20m in, still RUNNING) → vLLM 0.19.0 loads
+  Qwen3.6-35B-A3B FP8 fine. ETA ~20:30 UTC.
+- Session had restarted → both background jobs died; re-armed submit_v6.ps1 (07-13 slot,
+  still v6 by default) + v7 watcher.
+
+## 2026-07-12 (18:00 UTC) — Paradigm survey written (recon.md addendum); teammate facts; v8 = sidecar-explorer design
+- **Research findings written to [docs/recon.md](docs/recon.md) ADDENDUM 2026-07-12:** six
+  action-interface paradigms vs the duck's code-as-actuator; strongest public-set result =
+  executable world models (GPT-5.5, 15/25) but frontier-API-gated; the exploitable insight
+  for US = **max-over-plays portfolio**: card score = max over plays (banking's mechanism)
+  → a CPU-only bounded GraphExplorer play alongside the duck's play is strictly additive
+  and costs zero GPU. Chosen as **v8**.
+- **Teammate verified (read-only, his token):** `satadruhalder` sees the SAME team
+  submission list (1.31/1.20/0.78) → same Kaggle team. Therefore NO extra daily slot
+  exists (limit is per-team; 07-12 already used). His real asset: **untouched 30h/week GPU
+  quota** → use his account for parallel Phase-A validation runs (team-internal kernel
+  sharing = rules-legal). Do NOT push private kernels to non-team accounts, ever.
+- **Constraint noted:** v7 still RUNNING — do not push v8 to our kernel until v7 completes
+  (a concurrent push could contend for GPU session/quota); v8 validation should go to the
+  teammate's account anyway.
+
+## 2026-07-12 (18:50 UTC) — v8 (sidecar explorer) built + RUNNING on teammate's account
+- **v8 = v6 base (27B, isolates the sidecar delta) + INLINE sidecar-explorer graft**, pushed
+  as `satadruhalder/arc3-duck-v8-sidecar` v1 (RUNNING ~18:45 UTC, ETA ~00:30 UTC, on HIS
+  fresh 30h GPU quota; ours untouched for the v7 line).
+- **Design (from banking/shortcircuit source study, see scratchpad sharefork):**
+  - Card score = MAX over plays; within a play completed levels are monotone and per-level
+    scores freeze at completion ⇒ continuing a FAILED play can only add score.
+  - `SidecarSessionMixin._finish_if_needed` (session_class seam, composed over the installed
+    transfer→banking→shortcircuit chain, pickle-by-reference like shortcircuit): when the
+    duck's session ends un-won, run our GraphExplorer policy (my_agent.py port: frame-hash
+    graph, untested-move frontier, no-op pruning, level-up reward, object-relative clicks,
+    GAME_OVER→RESET) directly via `env.step` — banking's exact primitive.
+  - Bounds: ≤150s / ≤1200 actions / soft-cap margin 45s / stop_event; the notebook budget
+    block RESERVES the slice (`per_game −= sidecar+30s`) so wall packing is unchanged.
+    Skips when duck won (banking's territory) or final_score already set. Stops dead on WIN
+    (never RESETs from WIN — that's banking's new-play trick, not ours).
+  - Greppable evidence: `[sidecar] armed` + per-game `[sidecar] game=… actions=… levels a->b`.
+- **Validation gates (decide next slot use):** run clean; `[sidecar] armed`; sidecar lines
+  present on failed games; **levels a->b strictly greater on ≥1 stuck game** (the whole
+  point); mean ≥ v6's 1.50 − noise; duck-side per-game scores not degraded (reserve slice
+  is the only interaction).
+- Tonight's pipeline: v7 (ours, MoE) ETA ~20:30 → v8 (his, sidecar) ETA ~00:30; 07-13 slot
+  stays v6 (armed); 07-14 slot goes to the best validated of {v6 again, v7, v8}.
+
+## 2026-07-12 (21:55 UTC) — v7 (MoE swap) VALIDATED = REJECTED; 07-13 slot confirmed v6
+- **v7 result (Qwen3.6-35B-A3B FP8 MoE, 2-pass, 5h31m): mean 0.40, median 0.00 — REJECTED.**
+  vs v6 1.50 / v5 1.60. Only 8/26 games scored (best: lp85 3.51, sp80 2.41, r11l 1.44).
+- **The speed hypothesis was RIGHT, the capability hypothesis was WRONG:** 412 generated
+  tok/s (exactly ~2× the 27B's 206) and ~150k tokens/game (vs ~80k) — the model played
+  MORE turns and still scored 4× worse. A3B = ~3B active params; duck-grade grid reasoning
+  tracks ACTIVE params, not total. Swap-in confirmed real (banner `TAAF_V7 MODEL SWAP`,
+  model path `/kaggle/input/face-of-agi-qwen36-35b-fp8-weights` in log) so the rejection
+  is attributable to the model, not a mis-run.
+- **Lesson recorded:** "stronger base model" (Tufa's lever #3) means stronger REASONER, not
+  faster/bigger-total. Next model candidates must have ≥27B active params or proven
+  ARC-grid reasoning. Token throughput was never the binding constraint — capability is.
+- **07-13 slot decision: v6 (kernel version 6) — FINAL.** Auto-submit re-armed twice after
+  session restart killed job b30t0z8wd: background job ba0mkaxhw + DETACHED process PID
+  5280 (survives session death; log external/my_duck_fork/submit_v6_detached.log). Script
+  idempotent (re-checks list each retry) so double-arm is safe.
+- v8 (sidecar) still RUNNING on teammate account at 21:50 UTC — on pace for ~00:30 ETA;
+  decides the 07-14 slot vs v6-again.
+
+## 2026-07-13 (07:20 UTC) — 07-13 slot SUBMITTED late (v6, ref 54637379); auto-submit process died with machine sleep
+- **Near-miss:** both the background job AND the detached submit process died overnight
+  (machine sleep/reboot — detached log empty, PID gone). Caught at 07:18 UTC; ran
+  submit_v6.ps1 manually → **v6 submitted, ref `54637379` at 07:20 UTC, confirmed
+  registered.** LESSON: a detached process does NOT survive machine sleep; the only
+  reliable arm is running the script right when checking in, or a Windows scheduled
+  task. Submission still lands well before the day ends (UTC) — nothing lost.
+
+## 2026-07-13 (07:45 UTC) — v8 verdict: sidecar RETIRED; discovery: MAX-OVER-PLAYS is the big unexploited lever → v9
+- **v8 (sidecar) result (2-pass, 5h25m, clean): mean 1.34 / median 0.05** — within draw
+  noise of v6's 1.50. `[sidecar] armed` + per-game lines all present; explorer ran on
+  every failed play (1200-action cap hit every time), advanced a level on 3 plays
+  (g50t 0→1!, vc33 0→1, sp80 0→1). **BUT the level-ups were NOT credited**: run records
+  (benchmark.json) show levels_completed/actions_per_level from the DUCK only — raw
+  env.step actions bypass the run-record pathway. And even where the card pathway sees
+  them, a ~1000-action clear scores (h/1000)² ≈ 0. **Sidecar RETIRED** (also observed:
+  recovery-created second sessions re-ran the sidecar — once-flag is per session object).
+- **Dead ends measured en route:** LOCAL_ANALYZER_MAX_OUTPUT cap pointless (tool outputs
+  already ≤5k chars, tool_output_tokens=1024 server-side); retry-on-give-up pointless
+  (all 52 runs consumed the full ~9750s budget; "gave_up" = budget exhaustion);
+  compaction demoted (history/transitions are fully exposed in the sandbox — eviction
+  only loses model reasoning, and history_messages oscillates at ~35 from turn ~10).
+- **THE DISCOVERY (from pass-vs-pass variance):** the scorecard scores a card as the
+  MAX over plays, but our rerun plays each hidden game ONCE (`bm.n_passes = 1 if
+  TRUE_SUBMISSION else 2`). Offline mean-over-games of max(2 plays) vs single play:
+  **v6 data 2.27 vs 0.83; v8 data 1.65 vs 1.14; v7 data 0.68 vs 0.12** — consistent,
+  huge. Mechanisms: per-play draws are wildly variant (vc33: 0.00 and 10.71 on the
+  same game); level-ups land in the first ~third of a play (events analysis), so
+  half-budget plays keep most strength; and the transfer graft replays play-1 cleared
+  levels into play 2 at ~zero action cost (L2@analysis_step=0 events, many games).
+- **v9 = v6 + two-pass rerun** (`satadruhalder/arc3-duck-v9-twopass` v1, RUNNING since
+  ~07:45 UTC, teammate quota): `bm.n_passes = 2` unconditionally; budget block divides
+  wall budget by RUNS (floor 3600s, cap 9900s; offline capped 4700s to rehearse the
+  rerun's ~4670s/run). No sidecar. ETA ~11:00 UTC (52 runs × 4700s / 28 ≈ 2.4h + load).
+- **Validation gates:** banner `TAAF_V9 BUDGET per_run=4700s ... n_runs=52`; run clean
+  ~3.2h; from benchmark.json mean-of-MAX ≥ ~1.6 (v6 baseline: mean-of-max 2.27 at
+  9900s/run; the 4700s halving discount is what we're measuring) and mean-of-max must
+  beat v6's single-play 0.83 by a wide margin; transfer L2@0 events present in p1.
+- 07-14 slot decision: v9 (if gates pass) vs v6-again (offline 1.50, LB score of today's
+  sub 54637379 pending).
+
+## 2026-07-13 (17:15 UTC) — v6 LB = 0.55 (bad draw); v9 VALIDATED (all gates) → ported to our kernel as version 8, RUNNING; 07-14 slot armed via scheduled task
+- **v6 LB resolved: 0.55** (sub `54637379`) vs offline 1.50. Best stays **1.31** (v5 draw).
+  Read: same fat-tail draw noise as v2 (0.57) / v4 (0.78); v6 = v5 + strictly-additive
+  budget + inert dup-swap, so a structural regression is implausible — but the budget
+  filler is now 0-for-1 on LB and provably ~0 EV offline (zeros are capability-bound).
+  Learning applied: stop spending slots on single-play variants; the max-over-plays
+  lever (v9) directly raises the DRAW distribution, not just the offline mean.
+- **v9 (`satadruhalder/arc3-duck-v9-twopass` v1) COMPLETE + ALL GATES PASS** (ran
+  09:09–11:46 UTC, benchmark 2h37m, 52/52 runs, zero Traceback/request_error):
+  banner `TAAF_V9 BUDGET per_run=4700s n_games=26 n_runs=52 concurrency=28`; grafts
+  banner + banking/recovery armed; transfer fully live across plays (`published` →
+  `replayed`/`adopted` lines, incl. L0 replays at 4-59 actions).
+- **v9 offline numbers (25 core games): MEAN-OF-MAX 2.71** (gate was ≥1.6; v6 baseline
+  2.27 at 9900s/run), median-of-max 0.72, 14/25 scoring, zeros 11. **pass0 mean 0.88 at
+  4700s ≈ v6 single-play 0.83 at 9900s → the budget-halving discount is ~nil.**
+  Killer pattern: **pass1 ≥ pass0 on ALL 25 games** (pass1 mean 2.71 vs pass0 0.88) —
+  transfer warm-start + fresh-draw compounding, e.g. ft09 0→28.57 (3 levels), tu93
+  0→3.97, ls20 0→3.57, ar25 0→2.78, ka59 0→1.94, vc33 2.73→4.99. (ft09 28.57 is a
+  jackpot; without it mean-of-max ≈ 1.63, still ≫ any single-play mean.)
+  NOTE: `final_wallclock_seconds` in benchmark.json is cumulative from benchmark start
+  (p1 rows show ~9400 = 2×4700), not per-run duration — don't misread it next time.
+- **Ported v9 → our kernel as version 8** (`soumyacryptic/taaf-duck-harness-fork` v8,
+  pushed 17:04 UTC, RUNNING; ETA ~20:15 UTC). Byte-identical to the validated v9
+  notebook except a title-only markdown header (asserted scripted transform; local v7
+  copy backed up as `taaf-duck-harness-fork.v7.bak.ipynb`). Metadata: weights dataset
+  swapped back MoE → stock `driessmit1/vrfai-qwen3-6-27b-fp8-hf-snapshot`; machine_shape
+  kept. Gotcha: `kaggle kernels push` needs `PYTHONUTF8=1` on this machine (cp1252
+  decode error on the em-dashes otherwise).
+- **07-14 slot armed the RELIABLE way (07-13 lesson: detached processes die with
+  machine sleep): Windows scheduled task `ARC-submit-v8-0714`** at 05:35 local
+  (=00:05 UTC), WakeToRun + StartWhenAvailable, running
+  `external/my_duck_fork/submit_v8.ps1` — idempotent, waits for the slot, submits
+  **v8 if its Save&Run is COMPLETE, else falls back to v5** (LB 1.20/1.31); transcript
+  → `submit_v8_task.log`. Manual fallback unchanged: run the script at first check-in.
+- **Next:** verify v8 run completes clean (banner + mean-of-max from its benchmark.json);
+  after 07-14 LB resolves, consider n_passes=3 A/B (level-ups land early in plays;
+  validate on teammate quota first) and the remaining capability levers for the zeros.
+
+## 2026-07-14 (07:30 UTC) — v8 run clean; SUBMITTED on 07-14 slot (ref 54676947); scheduled task fired late + died → manual submit
+- **v8 Save&Run COMPLETE** (benchmark 18:05–20:43 UTC 07-13, 2h37m, 52/52 runs,
+  `TAAF_V9 BUDGET per_run=4700s n_games=26 n_runs=52` + grafts banners, zero errors).
+- **Scheduled-task postmortem:** machine was asleep at 05:35 local; StartWhenAvailable
+  fired the task at 12:49 local (07:19 UTC) on wake, but it was killed mid-run
+  (LastTaskResult 0xC000013A, no transcript footer; its first `kaggle kernels status`
+  call returned empty). No submission resulted. LESSON: even scheduled tasks need the
+  machine awake at trigger time (WakeToRun requires wake timers enabled); the morning
+  check-in remains the reliable submit path. Task unregistered after manual submit.
+- **Submitted v8 manually: ref `54676947` (07:26 UTC), PENDING.** Description records
+  both validation draws.
+- **Our v8 offline draw (independent of teammate's v9 draw, same notebook):
+  MEAN-OF-MAX 1.04 / median-of-max 0.28 / 13-of-25 scoring** (pass0 mean 0.47,
+  pass1 mean 1.04). vs teammate draw: mean-of-max 2.71 (his had ft09 28.57 jackpot;
+  ours drew ft09 0.00). **Mechanism replicated: pass1 ≥ pass0 on ALL 25 games in BOTH
+  draws** (this run: r11l 0→4.76, sp80 1.57→4.76, sc25 0→1.83, ar25 0.43→2.78;
+  ar25-dup replayed to 2.78). Two mean-of-max draws {2.71, 1.04} → fat-tailed, mean
+  ~1.9; single-play means {0.88, 0.47} — the max lever roughly doubles the expected
+  draw. LB expectation: card = max over 2 plays; v5-line draws were 1.20/1.31.
+- **Next:** record 07-14 LB score when resolved (v8 line vs v5's 1.20/1.31 decides
+  whether two-pass becomes the default submit); candidates after: n_passes=3 A/B on
+  teammate quota, capability levers for the 11 zero-games.
+
+## 2026-07-14 (13:00 UTC) — v8 LB = 0.00 (COMPLETE, resolved <5h). ROOT CAUSE FOUND: competition cards allow ONE RUN PER GAME ID → max-over-plays across runs is an OFFLINE-ONLY MIRAGE. 07-15 = v5 resubmit (armed).
+- **v8 (two-pass) publicScore 0.00** (sub `54676947`, COMPLETE). Resolved in <5h vs
+  ~9-10h for v5/v6 reruns → the rerun collapsed early; best stays 1.31.
+- **Root cause (from framework source, not speculation):**
+  [competition_arcade.py:66](external — share-fork bundle) states it outright:
+  *"arc_agi competition scorecards can only create one run per game ID."* Mechanics:
+  benchmark.py opens ALL passes of ALL games via `start_game()` UP FRONT (before the
+  solver plays; benchmark.py:149-155) → on the live gateway v8 tried 220 session opens
+  incl. a duplicate of every game_id on the one shared card
+  (game_api.py:184-204 — competition mode shares ONE scorecard; offline mode uses
+  per-game scorecards, which is why 3 clean offline validations never saw it).
+  Second opens illegal → sessions dead/corrupt → runs died fast (retry_guard bails)
+  → kernel completed early with a zeroed card, 0.00 COMPLETE.
+- **The 07-13 "max-over-plays" discovery is hereby CORRECTED: it is real for scoring
+  (scorecard.py:466-489 takes the best play per game) but plays can only multiply
+  WITHIN the single legal run — full RESET opens a new play ONLY from WIN state
+  (arcengine base_game.py:311-316; banking's exact primitive) or at action_count 0.
+  An un-won game can NEVER get a fresh play — not concurrently (v8's death), not
+  sequentially (one run per game ID), not via a second card ("submission-style
+  Arcades allow only one scorecard"). Offline n_passes=2 worked because OFFLINE mode
+  runs per-game scorecards with no such constraint. The 2.71/1.04 mean-of-max numbers
+  measured a mechanism the live gateway forbids.**
+- **What survives untouched:** banking (WIN-only fresh-play replay — legal, still
+  idle), transfer across clone families within the one run (live-proven), recovery,
+  wall-budget filler. The pass1≥pass0 offline effect was mostly transfer warm-start —
+  live, that value is already captured by clone-family transfer.
+- **PROCESS FIX — competition_sim (R11.13):** the bundle ships
+  `CompetitionArcadeServer.official_110()` + `competition_sim` ArcadeSpec: a local
+  submission-shaped arcade (one shared scorecard, one run per game ID, hidden
+  baselines, 110 cloned IDs) — built by Tufa exactly to reproduce these failures
+  pre-submission. Our offline validations never used it; v8 would have failed in it.
+  **RULE: any change that touches rerun behavior (passes, budget, scorecard, session
+  lifecycle) must validate against competition_sim before a slot is spent on it.**
+- **07-15 slot armed: v5 verbatim resubmit** (`submit_v5.ps1` + scheduled task
+  `ARC-submit-v5-0715`, 05:35 local backstop; morning check-in primary — 07-14's task
+  fired late after sleep and was killed mid-run; manual submit landed v8 at 07:26 UTC).
+- **Slot ledger:** 07-13 v6 0.55, 07-14 v8 0.00 — two slots on failed structural bets;
+  v5 resubmits (the boring max-draw play) remain the only line that ever beat 1.07.
+- **Next levers (capability, not plays):** zero-games study (11 zeros offline),
+  context-compaction quality at 32k, base-model ≥27B-active candidates; validate any
+  rerun-shaped change in competition_sim first.
+
+## 2026-07-14 16:50 UTC — Forum + code-section recon sweep (user-directed)
+- **Method:** kernels via Kaggle CLI (dateRun + voteCount sorts), 9 kernels pulled and
+  diffed in scratchpad `recon0714/`; forum threads readable ONLY via r.jina.ai proxy on
+  individual thread URLs (list page never renders; IDs found via DDG-html/Bing).
+  Full findings + ranked queue: [docs/recon.md](docs/recon.md) ADDENDUM 2026-07-14.
+- **Upstream duck line:** v12=+shortcircuit, v13=+recovery, **v14 (today) drops recovery
+  ("deliberately OFF") and turns ON transfer(+banking)** → first external evidence against
+  recovery (our v5 runs it ON). A/B candidate, not a blind swap.
+- **Liftable ops patterns:** (a) v9b fork "safety pack": live soft_end = start+11h20m
+  (stock duck live = NO soft deadline; drain before 12h hard kill) + 3-games+dup-family
+  fast offline commit gate; (b) maxingkong733 "fast-save": all cells guarded by
+  KAGGLE_IS_COMPETITION_RERUN + dummy parquet → Save&Run in minutes, solver only in the
+  hidden rerun (use ONLY for configs pre-validated in competition_sim/offline).
+- **Zero-games candidate:** dead-signature guard (exact-state repeat-failure blocker,
+  threshold 4, refusal payload redirects the model). Measure loop pathology on our 11
+  zeros offline before shipping.
+- **Duck env-knob surface enumerated (hydra kernel):** LOCAL_ANALYZER_CONTEXT_WINDOW /
+  TEMPERATURE / TOP_P / TOP_K / ENABLE_THINKING, MULTIMODAL_UPSCALE — context lever is
+  env-only; hydra's 8-way/49k does NOT fit live (55 games × 2.2h / 8 ≈ 15h > 12h wall).
+- **Forum facts:** Tufa best LB 1.21 with a RETRACTED 1.30; public 1.6 ±0.45; draws to
+  0.77 on the same notebook → our 1.31 already exceeds their best counted draw; daily
+  v5 resubmits stay correct. Games are deterministic/stable-seeded (Kamradt) → underwrites
+  banking/transfer replay. Known rerun killer: resource.setrlimit(RLIMIT_AS) (not ours).
+  Milestone 2 = Sept 30 final.
+- **Slot policy unchanged:** 07-15 = v5 verbatim (armed); queue = safety pack →
+  fast-save cadence → dead-signature offline study → recovery-OFF A/B → context/
+  concurrency env A/B; every rerun-shaped change through competition_sim first.
+
+## 2026-07-14 17:15 UTC — v9 pushed: v5-live-identical + competition_sim commit gate
+- **v5 notebook RECOVERED:** Kaggle API cannot pull old kernel versions (403/400 on
+  version param) and the local file held v8; found a verbatim v5 copy in the
+  ae40551e session scratchpad (`ours_latest/`, title cell "v5", flags match) →
+  preserved as `external/my_duck_fork/taaf-duck-harness-fork.v5.ipynb`.
+  **Rule: keep a local .vN backup of every pushed version from now on.**
+- **Found in v5 cell 14: the 11h20m live soft-end "safety pack" is ALREADY there**
+  (same lineage as Yin Li's v9b fork) — recon queue item (a) was half-shipped;
+  only the fast commit gate was missing.
+- **v9 built by asserted transform of v5** (build_v9.py; anchors must match exactly
+  once; cells 1-13/15/16 asserted byte-identical; live anchors asserted intact):
+  - Cell 14 offline branch: after the stock offline game list, a guarded block
+    starts `taaf.competition_arcade.CompetitionArcadeServer(game_ids=[ar25,ka59,tu93],
+    total_runs=4, environments_dir=<bundled env files>)` → ONE shared scorecard,
+    one run per game ID, games k000-k003 (k003 = ar25 clone; family_store
+    fingerprints key on initial state, not env name → transfer publish→replay is
+    exercised ON the shared card). Sets n_passes=1 when gate active; stock dup
+    block skipped; ANY fault → stock v5 offline validation (25+dup × 2 passes).
+  - LIVE path byte-identical to v5 (diff verified: every added line behind
+    `not TRUE_SUBMISSION`) → a v9 submission IS a v5 draw.
+- **Pushed 17:10 UTC → kernel version 9, Save&Run RUNNING.** Expected ~2-3h
+  (9-10h means the gate fell back). Validation gates: `TAAF_V9 COMMIT_GATE` +
+  `TAAF_GRAFTS` banners; 4 clean game_runs in benchmark.json; transfer replay
+  evidence on k003; no dead-session errors on the shared card.
+- **If clean:** v9 replaces v5 as the daily submit (zero draw-risk — live path
+  identical) and becomes the fast-iteration template for queue items (b)-(e).
+  07-15 slot stays v5 (already armed; v9 result lands after the slot anyway).
+
+## 2026-07-21 12:33 UTC — Session resumed after 7-day gap; 07-21 slot SUBMITTED (v5, ref 54877376); 5 slots (07-16..07-20) MISSED
+- **What:** Resumed after a 7-day gap (last LOG entry 07-14). Checked Kaggle state,
+  submitted the 07-21 daily slot: **kernel version 5 (v5), ref `54877376`, 12:32 UTC,
+  PENDING.** Direct CLI submit (`-v 5`); did NOT use `submit_v5.ps1` (its slotDay is
+  hardcoded to 07-15 → it would false-positive on the existing 07-15 sub and exit).
+- **State found:**
+  - **Best LB still 1.31** (v5, sub `54598846`, 07-12). Unchanged.
+  - **07-15 slot:** v5 resubmit landed **0.55** (sub `54720755`, COMPLETE) — another
+    fat-tail bad draw (cf. v2 0.57, v4 0.78, v6 0.55); best stays 1.31.
+  - **07-16 through 07-20: FIVE slots MISSED (no submissions).** Machine was asleep /
+    no morning check-in and no reliable daily auto-submit fired. Five wasted free
+    max-draws — the single biggest recurring loss in this project. Unrecoverable.
+  - **Kernel latest version = v9 (competition_sim commit-gate)** and it is COMPLETE:
+    Save&Run output holds the `k000..k001` (ar25/ka59/tu93/ar25-clone) commit-gate
+    runs → the fast gate ran (not the 9-10h fallback). v9's live path is byte-identical
+    to v5, so a v9 submission would be an equivalent v5 draw; chose v5 anyway as the
+    strictly-proven notebook (v5 is the exact one that cleared Phase A+B and drew 1.31;
+    v9-live is asserted-identical but has never gone through Phase B).
+- **Why v5:** zero-risk proven max-draw per standing discipline (never submit an
+  unvalidated version; resubmit the best-known clean notebook every day; LB keeps max).
+- **RELIABILITY PROBLEM (root cause of the 5 missed slots) — must fix:** there is still
+  no dependable unattended daily submit. Scheduled tasks don't fire when the machine
+  sleeps (07-14 postmortem), detached processes die on sleep (07-13 postmortem), and a
+  7-day unattended stretch dropped 5 slots. The only reliable path so far is a human
+  morning check-in, which didn't happen for a week. Options to evaluate next: a cloud
+  cron (Kaggle-side scheduled notebook that self-submits, or a GitHub Action with the
+  Kaggle token as a secret) that does not depend on this machine being awake.
+- **Next:** record 07-21 LB score when it resolves; decide whether to make v9 the daily
+  default (verify its Save&Run log banners `TAAF_V9 COMMIT_GATE` + `TAAF_GRAFTS` and the
+  4 clean k00x game_runs first); stand up a machine-independent daily submit so slots
+  stop leaking; remaining capability levers for the 11 zero-games unchanged.
+
+## 2026-07-23 14:50 UTC — ACTION7 capability hole found (fix = 1 line); 07-23 slot = v5 (ref 54930226); v10 pushed, Save&Run in flight
+
+- **Trigger:** user flagged that submissions aren't yielding good results; asked to check
+  the competition page for changes and for improvement info.
+- **Slot bookkeeping:** 07-21 v5 draw resolved **0.65** (sub `54877376`) — 4th v5 draw
+  (1.20 / 1.31 / 0.55 / 0.65, mean ≈0.93). **07-22 slot MISSED (6th leak).** 07-23 slot
+  **SUBMITTED = v5, ref `54930226`, 14:37 UTC, PENDING** (direct CLI `-v 5`).
+- **LB moved hard (07-23 snapshot):** top = **1.86 YUTO KOJIMA** (was 1.56 on 07-12);
+  top-20 cutoff ≈ **1.44** (was 1.36) → **our 1.31 is now OUT of the top 20**. Band
+  1.44–1.61 is dense; Tufa Labs themselves at 1.45; 星际黑AGI at 1.47 running a PUBLIC
+  **stock-baseline** kernel (`boristown/agi-duck-harness-fast-eval`, 138 votes — all
+  patches explicitly disabled). Read: most of the band is daily-resubmit max-draw
+  compounding on the stock duck; teams that never miss a slot out-draw us. Our 6 leaked
+  slots are the main relative loss; no rules/timeline changes found (milestone 2 still
+  Sept 30, grand prize $700K @100%).
+- **THE FINDING — ACTION7 is visible but unexecutable in the deployed duck:**
+  - [action_names.py:7-15](external/taaf_source/src/ARC3-Inference/inference/agent/action_names.py#L7-L15)
+    maps only ACTION1–6 + RESET. `to_model_action("ACTION7")` passes the label through
+    (line 22) → the model SEES `ACTION7` in `valid_actions`; `to_engine_action("ACTION7")`
+    returns **None** (lines 25–31).
+  - [solver.py:520-525](external/taaf_source/src/ARC3-Inference/inference/framework/solver.py#L520-L525):
+    every model attempt → `Unknown action at index N: 'ACTION7'`. The button exists,
+    can never be pressed. Wasted turns at best; ACTION7-gated levels unreachable.
+  - **6/25 public games (24%) handle ACTION7 in step logic:** ar25, bp35, lf52, sb26,
+    sk48, su15 — **sk48 is our never-cleared transfer dup**. Extrapolate ~13/55 hidden
+    LB games. Engine supports it (ARC-AGI-3-Agents README changelog 0.9.2: "ACTION7 as
+    possible GameAction"; official spec: RESET, ACTION1–5+7 simple, ACTION6 x,y).
+  - Public prior art: `kevin250304/arc3-duck-minimal-action7-reproducible` (07-18) —
+    converged after a rollback to the SAME minimal form: one reverse-map dict entry,
+    prompts/solver verbatim. (Their v1 also added animation-frame metadata to
+    last_action_result — rolled back for score stability; noted as a later lever.)
+- **v10 BUILT + PUSHED 14:45 UTC (Save&Run RUNNING):** = v5 byte-identical except
+  cell-12 prepend: verify `arcengine.GameAction.from_name("ACTION7")`, then
+  `MODEL_TO_ENGINE_ACTION["ACTION7"] = "ACTION7"` + asserts; fail-safe try/except
+  keeps stock mapping and prints `TAAF_V10 ACTION7 FAILED` on any error. Model-facing
+  label set unchanged (valid_actions already showed ACTION7) → zero prompt drift; fits
+  the proven rule "structural levers + verbatim prompts win". Offline path = v5's full
+  2-pass / 25-game benchmark → directly comparable to v5's 1.60/0.96 baseline.
+  Backup: `external/my_duck_fork/taaf-duck-harness-fork.v10.ipynb`.
+- **Validation gates for v10 (check ~20:30 UTC):** (1) log banner
+  `TAAF_V10 ACTION7 OK`; (2) no `ACTION7 FAILED` banner; (3) offline mean/median ≥
+  v5's 1.60/0.96 (esp. watch ar25/bp35/lf52/sb26/sk48/su15 deltas); (4) clean finish
+  ≤11h20m soft end. If clean → 07-24 slot = v10 (first candidate beyond v5 since the
+  two-pass line closed).
+- **Ops:** kaggle CLI briefly died with `ImportError: DLL load failed while importing
+  _socket: An Application Control policy has blocked this file` — transient (worked on
+  retry minutes later); REST (`Invoke-RestMethod` + Bearer) is the reliable fallback.
+  User authorized Kaggle GPU test runs this session.
+- **Next:** check v10 Save&Run gates; if clean submit v10 on 07-24; still open = the
+  machine-independent daily auto-submit (6 leaked slots now); later lever = animation
+  metadata (kevin's rolled-back half) behind an offline A/B.
+
+## 2026-07-23 21:40 UTC — v10 VALIDATED: offline 2.21/0.88 (mean +38%, best legal-mode run); 07-24 slot armed = v10
+
+- **v10 Save&Run COMPLETE, all gates pass:** banner `TAAF_V10 ACTION7 OK: reverse mapping
+  installed (engine action verified)` at t=551s + `TAAF_GRAFTS FEATURES={banking,recovery,
+  retry_guard,shortcircuit,transfer}` — both mechanisms live. No FAILED banner. Clean
+  **4h 24m 27s** (vs v5's 4h25m — no runtime cost), 26 games × 2 passes = 52 runs, 0 won,
+  7,937 actions, 3.15M tokens, 198 tok/s.
+- **Score: mean 2.21 / median 0.88** vs v5 baseline 1.60/0.96 → mean **+38%**, median −8%
+  (within draw noise). Best legal-mode offline of the entire line (v1 1.11, v2 1.01,
+  v4 1.35, v6 1.50, v5 1.60).
+- **Per-game vs v5:** zeros 8 → 7 unique — **cn04 0→3.46, m0r0 0→1.06 flipped positive**;
+  sc25 3.58→0 regressed (it flip-flopped by draw before, cf. v6 postmortem); dc22/g50t/
+  ls20/sk48(+dup)/tr87/wa30 stay stuck. Efficiency wins up across the board: vc33
+  3.36→8.57, tu93 4.14→5.95, ar25 6.46→7.17, ft09 4.76→5.16, cd82 4.76, cn04 3.46,
+  tn36 3.57 flat. ACTION7-game scorecard: ar25 up, sb26 2.78, su15 2.22, bp35 0.28 /
+  lf52 0.33 nonzero, sk48 still 0 (its wall isn't ACTION7 alone).
+- **Read:** the fix pays twice — (a) two capability zeros flipped, (b) fewer wasted turns
+  on `Unknown action` errors → more productive actions per token budget everywhere.
+- **07-24 slot ARMED (persistent monitor, this session):** at 00:02 UTC submit kernel
+  **version 10**, verify via REST list, retry ×3. v10 passes the standing validation rule
+  (full Save&Run offline, both banners, mean ≥ baseline). v10 becomes the daily default.
+- 07-23 slot (v5, ref `54930226`) still PENDING at time of writing.
+
+## 2026-07-24 08:30 UTC — 07-24 slot SUBMITTED = v10 (ref 54953277); 07-23 v5 drew 0.97; armed monitor DIED with session
+
+- **07-23 (v5, ref `54930226`) resolved 0.97** — sub-best draw, best stays 1.31. v5 draw
+  history now: 1.20, 1.31, 0.55, 0.55, 0.65, 0.97.
+- **The 00:02 UTC auto-submit monitor never fired** — Claude Code session exited before
+  midnight, monitor died with it, no output file. Lesson repeated: ANY submit path tied to
+  a live session/machine is unreliable. Slot was still open at 08:12 UTC check-in.
+- **07-24 slot = kernel version 10** (first v10 live draw; validated 2.21/0.88 offline,
+  see 07-23 entry) → ref `54953277`, 2026-07-24 ~08:25 UTC (Kaggle lists 14:25 local-ish
+  timestamp), PENDING. Verified via REST list.
+- Machine-independent daily auto-submit remains TOP priority — now 3 distinct failure
+  modes witnessed (scheduled task sleep-kill, morning check-in gap, session-tied monitor).
+
+## 2026-07-25 19:50 UTC — v10 LB = 1.46 NEW BEST (+0.15); 07-25 slot = v10 resubmit (ref 54983628)
+
+- **v10 first live draw (ref `54953277`) = 1.46 — NEW BEST**, up from v5's 1.31 ceiling
+  (6 v5 draws never beat 1.31; v10's FIRST draw did). At/above the 07-23 top-20 cutoff
+  (≈1.44). The ACTION7 reverse-map fix transfers to the hidden set — consistent with the
+  offline read (+38% mean via flipped zeros + fewer wasted turns).
+- **Structural-lever rule holds (n=2):** v5 grafts 1.07→1.31, v10 ACTION7 fix 1.31→1.46.
+  Both = engine-level fixes, prompts verbatim.
+- **07-25 slot = v10 resubmit** (daily max-draw discipline) → ref `54983628`, 19:48 UTC,
+  PENDING. Caught with ~4h to spare — again a manual catch; auto-submit still unbuilt.
+- Next: GPU levers from the recon queue (dead-signature guard / recovery-OFF A/B /
+  context bump) — v11 candidate builds tonight.
+
+## 2026-07-25 20:20 UTC — dead-sig guard KILLED by measurement; v11 (context 40k) PUSHED, Save&Run in flight
+
+- **Dead-signature guard deprioritized on data.** Parsed v10 events.jsonl for all 7 zero
+  games + 3 controls: exact-state 4+ repeat loops (the guard's trigger) fire 0-3×/run,
+  zeros and controls alike (worst streak 12, ls20 p1). Zeros DO waste 40-55% of actions
+  on no-ops — but VARIED ones, not exact-state loops. Guard would refuse ~1-8 actions per
+  100-475. Queue rule "ship only if it'd flip ≥1 game" → it wouldn't. Killed pre-build;
+  measurement cost 0 GPU hours. Analysis: scratchpad/analyze_loops.py.
+- **v11 PUSHED (kernel version 11) = v10 + `LOCAL_ANALYZER_CONTEXT_WINDOW` 32768→40960 +
+  `bm.solver.concurrency` 28→20.** Queue lever #5 (winner-named: context/memory; Hydra
+  Scout precedent 49152@8-way — not live-safe; ours is). Mechanism: cell-12 hook patches
+  `tool_agent._LOCAL_ANALYZER_CONTEXT_WINDOW` (module constant, read in
+  ToolAgent.__init__; instances created per-game after the hook) + solver attr; vLLM
+  max_model_len 64k unchanged. Fail-safe try/except → stock 32768/28. Prompts/grafts/
+  ACTION7 fix untouched. Live math: 55 games / 20-way = 3 waves × 7920s ≈ 6.6h < 11h20m.
+- **Gates when Save&Run completes (~5-7h; monitor armed):** banner `TAAF_V11 CONTEXT OK`;
+  mean ≥ v10's 2.21 − noise AND median ≥ 0.88 to become daily default; watch wall time
+  (3 waves vs v10's 2) and tok/s (KV pressure at 40k).
+- 07-25 slot (v10 resubmit, ref `54983628`) PENDING.
+
+## 2026-07-26 08:55 UTC — v11 VALIDATED (1.99/0.95, zeros 7→5) → daily default; 07-26 slot = v11 (ref 54995834); GitHub Actions auto-submit LIVE
+
+- **07-25 v10 resubmit resolved 0.89** (ref `54983628`) — v10 draws now 1.46 / 0.89; best
+  stays **1.46**. LB 07-26 snapshot: top 1.86 (YUTO KOJIMA), cutoff #20 = 1.45 → our 1.46
+  is INSIDE the top 20, tied 4-way (Biubiu / MLRush / Arunodhayan / Kochi Loki).
+- **v11 Save&Run COMPLETE + CLEAN (all gates pass):** banners `TAAF_V11 CONTEXT OK:
+  analyzer context 32768->40960, concurrency 28->20` + `TAAF_V10 ACTION7 OK` +
+  `TAAF_GRAFTS {banking,recovery,retry_guard,shortcircuit,transfer}`. Wall 6h36m
+  (20:04→02:40 UTC; 3 waves at conc 20, as designed; v10 was 4h24m). Zero real errors
+  (only code-echo matches in log). 26 games × 2 passes = 52 runs, 0 won.
+- **Score: mean 1.99 / median 0.95** vs v10's 2.21/0.88 → mean −0.22 (within ±0.45
+  per-pass noise, passes the pre-registered "≥ 2.21 − noise" gate), median +0.07 ✓.
+  **Unique zeros 7 → 5** (sk48, m0r0, s5i5, tr87, g50t): flipped TO scoring = dc22 0.43,
+  ls20 **0.93 both passes** (first stable ls20 ever), wa30 2.22/0, sc25 0.70/0; flipped
+  to zero = m0r0, s5i5. Fat tail: ft09 12.52/14.29 jackpot; efficiency top-end softer
+  (vc33 8.57→0.72 avg, ar25 7.17→0.97) — draw noise on a fat-tailed metric.
+  tok/s 156 vs v10's 198 (−21%: KV pressure at 40k + 20-way batching) but wall is longer
+  so total tokens similar (~3.7M); live math unchanged (55/20 = 3 waves × 7920s ≈ 6.6h).
+- **v11 = daily default per the pre-registered gate. 07-26 slot = v11 first live draw**
+  (ref `54995834`, 08:22 UTC, PENDING) — first live test of the context lever.
+- **AUTO-SUBMIT BUILT AND LIVE (top-priority fix; 7 slots leaked to date):** GitHub
+  Actions cron in the private repo (`Cryptic2-0/arc-agi-3-agent`):
+  - `.github/workflows/daily-submit.yml` — cron 00:20 UTC daily + workflow_dispatch;
+    ubuntu runner, python 3.12, `pip install kaggle`.
+  - `scripts/daily_submit.py` — idempotent: lists submissions via REST, exits if
+    today's UTC slot is already used (manual submits always win), else submits the
+    kernel/version in `submit_config.json` and verifies it landed.
+  - `submit_config.json` — current daily default (kernel, version 11, message).
+    **To change the default: edit version+message, push. To pause: disable the
+    workflow in the repo's Actions tab.**
+  - Secret `KAGGLE_API_TOKEN` set via REST sealed-box (gh CLI rejected the stored
+    `gho_` token for missing `read:org`, but its scopes gist/repo/workflow suffice
+    over raw REST; pynacl via `uv run --with pynacl`, VIRTUAL_ENV must be unset —
+    broken venv poisons uv).
+  - Machine can now sleep indefinitely; the three witnessed failure modes (sleep-killed
+    task, missed check-in, session-tied monitor) are all bypassed.
+- **Next:** record v11 draw (if clearly bad → revert submit_config.json to version 10);
+  verify tomorrow's cron run fired (Actions tab / submissions list); remaining queue:
+  recovery-OFF A/B, fast-save cadence, capability levers for the 5 zeros
+  (sk48/m0r0/s5i5/tr87/g50t).

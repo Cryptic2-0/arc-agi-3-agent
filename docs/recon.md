@@ -102,3 +102,130 @@ nearly all forks of the winner. Our graph line (0.24 best) is obsolete.
 Fork the duck (done: `soumyacryptic/taaf-duck-harness-fork`), replicate ~1.2, then iterate
 via the customization hook + TAAF source. Offline validation stays: the notebook's
 non-submission mode plays the 25 public games end-to-end.
+
+---
+
+# ADDENDUM 2026-07-12 — Paradigm survey: alternatives to "commands as Python"
+
+Question explored: the duck routes game commands through a Python sandbox — what other
+action-interface paradigms exist, and what do they score? (Sources cited per entry.)
+
+| Paradigm | Best known result | Verdict for us |
+|---|---|---|
+| Direct action emission (LLM picks ACTION1-7, no code) | naive loops 0.2-0.4%; AERA explore→verify→plan 4/25 games ([2605.25931](https://arxiv.org/abs/2605.25931)) | Dead end — LLMs can't compute over grids in-context. |
+| No-LLM graph exploration | Blind Squirrel 6.71% (preview); our GraphExplorer 0.24 LB | Plateaus at L1s; but FREE (CPU-only) → see portfolio idea below. |
+| Online CNN+RL frame-change prediction | StochasticGoose 12.58% (preview) at 255k actions | Structurally punished now: metric SQUARES action-efficiency. |
+| DSL + LLM hybrid | Fluxonian 8.04% (preview) | Superseded by free-form code (duck). |
+| Learned world model (JEPA/dynamics) | Gemma-4-31B reflection agent 0.79 public LB | Real but below duck line (~1.2-1.6). |
+| **Executable world model** (agent writes a Python SIMULATOR of the game, verifies vs observations, plans inside it) | **GPT-5.5: 15/25 public fully solved, 58% RHAE** ([2605.05138](https://arxiv.org/abs/2605.05138)) | Strongest known public-set result — but needs frontier API reasoning; our offline 27-35B can't sustain a verified simulator today. Revisit at milestone 2 (stronger local models). |
+| Determinism / replay search | banking & transfer grafts (in our v5+) | Already exploited surgically. |
+
+Cross-cutting: code-as-ACTUATOR (duck) beats code-free because the model gets exact grid
+computation + batched actions + self-verification; code-as-WORLD-MODEL (simulator) is the
+next paradigm up, gated on model strength. AERA paper also warns: all 25 public games are
+solvable by non-intelligent strategies → public-set validation overestimates; hidden-set
+draws remain the only ground truth.
+
+## The exploitable insight: max-over-plays portfolio (v8 candidate)
+The scorecard scores a game card as the **max over plays** (this is why Tufa's banking
+graft exists). A CPU-only graph explorer costs ZERO GPU (the binding resource) and
+historically clears level 1 on games the duck zeroes (g50t, m0r0). → Run a bounded
+explorer play on each card alongside the duck's play: max(duck, explorer) ≥ duck strictly.
+Budget cost ~1-4 min of the 165-min card budget; expected uplift ≈ explorer's score on
+duck-zero games only (~+0.04-0.15 LB mean, more if hidden games have more duck-zeros).
+Implementation surface already exists: `src/taaf-grafts` solver-wrapping pattern
+(banking_solver adds plays to a card).
+[07-14 NOTE: live cards allow ONE run per game ID and fresh plays only from WIN —
+the cross-run version of this idea is dead (see LOG 07-14); only WIN-gated banking
+and within-run mechanisms survive.]
+
+---
+
+# ADDENDUM 2026-07-14 — Forum + code-section sweep (post v8=0.00)
+
+> Method: Kaggle CLI kernel list (dateRun + voteCount), pulled 9 kernels into scratchpad
+> `recon0714/`, diffed the duck line, read the graft forks; forum threads via
+> r.jina.ai proxy (Kaggle SPA blocks plain fetch; individual thread pages render, the
+> list page does not — enumerate IDs via search engines).
+
+## 1. Upstream duck line moved: v12→v14 flag timeline (thtennant, same share-fork bundle we run)
+- v10 (07-11): {efficiency, retry_guard} — the "revert" we knew. 12 votes.
+- v12 (07-12): + shortcircuit. 15 votes.
+- v13 (07-13): + recovery.
+- **v14 (07-14, today): {efficiency, retry_guard, shortcircuit, transfer(+banking implied)};
+  comment says "recovery deliberately OFF"** — recovery lasted ONE day upstream.
+- Read: the graft author now runs transfer+banking WITHOUT recovery. Our v5 (LB 1.20/1.31)
+  runs recovery ON. His flags ≠ evidence of LB scores (his draws unknown), but "deliberately
+  OFF" after one day suggests live evidence against recovery. → candidate A/B, never a blind swap.
+
+## 2. Safety pack (kevin250304/arc3-duck-v9b-recovery-banking — Yin Li fork)
+Two liftable ops patterns, both marked "safety pack" in cell 14:
+- **Live rerun soft_end = start + 11h20m** (stock duck runs live with soft_end=None!):
+  "so the solver drains and the shared scorecard closes before Kaggle's hard kill"
+  (12h submission-rerun wall). Cheap insurance against end-of-run truncation.
+- **Offline commit gate = 3 games + 1 dup-family game** (`external_game_id=f"{env}-dup"`,
+  same arcade_spec → same transfer fingerprint family): Save&Run validates in ~1-2h
+  instead of 9-10h AND exercises transfer publish→replay. Falls back to `[:4]` on any fault.
+
+## 3. Fast-save pattern (maxingkong733/arc3-duck-dead-signature)
+Cell 0 writes a dummy `submission.parquet` and every other cell is guarded by
+`if _FAST_SAVE_COMPETITION_RERUN:` → **Save&Run completes in minutes; the solver runs
+only in the real hidden rerun.** Breaks our "one 10h Save&Run per day" cadence limit —
+but forfeits offline validation of that exact version. Safe usage for us: only for
+configs already validated (competition_sim + offline) in a prior version; the deployed
+bundle/datasets are identical, only cell text changes.
+
+## 4. Dead-signature guard (same kernel) — concrete zero-games candidate
+Monkey-patches `_HarnessGameSession.step_env`: key = (levels_completed, blake2b(full
+board), action); after an action produced **no board change AND no reward 4× in the
+exact same state**, the 5th attempt is refused with an error payload telling the model
+"known ineffective action... choose a different action or hypothesis". Single-action
+requests only (batches bypass); counter clears when the action works. Conservative
+by design — the Gemma line found a BROAD veto suppresses identical interactive tiles;
+exact-full-state conditioning avoids that. → Test offline against our 11 zero-games:
+first measure how often the pathology (exact-state repeat loops) actually fires.
+
+## 5. Gemma-4-31B reflection agent (ko0kip, 78 votes; = 2nd-place lineage, 0.79 public)
+Different stack (official Agents framework + vLLM structured output, NOT TAAF). Policy
+ideas with constants: reflection memory = markdown ≤1800 chars rewritten every 10
+transitions (persisted per game); saliency-tiered fallback clicks (button-like first);
+structural dead-click pruning DEADSIG_K=2, reset per level; FIRST_ACTION_DEADLINE 14min,
+global 9h with 20min shutdown reserve, LLM request timeout 400s, MAX_HISTORY 12,
+plan queue ≤4 actions. Below duck line on LB → mine for policies, don't switch stacks.
+
+## 6. Hydra Scout (lucifer19, 11 votes) — the duck's env-var tuning surface, enumerated
+Tunes the STOCK Tufa bundle purely via env: `LOCAL_ANALYZER_CONTEXT_WINDOW` 32768→49152,
+concurrency 28→8, `LOCAL_ANALYZER_TEMPERATURE` 0.6→0.50, TOP_P 0.92, TOP_K 20,
+`LOCAL_ANALYZER_ENABLE_THINKING=true`, `MULTIMODAL_CONTEXT=current_grid`,
+`MULTIMODAL_UPSCALE=4`, tool timeout/yield 45s; hard watchdog = `asyncio.wait_for`
+8h40m + 20min teardown reserve. **Caveat before copying: live = 55 games in a 12h wall;
+8-way × ~2.2h/game ≈ 15h → doesn't fit.** A live-safe variant is ~16-20 concurrency at
+40-48k context. This makes our "context compaction quality" lever testable as pure env
+knobs (no code): fewer evictions per game at 40k+.
+
+## 7. Forum facts (thread IDs where known)
+- **Tufa writeup (717133) hard numbers:** best LB 1.21 — **a 1.30 draw was RETRACTED**;
+  public-set 1.6 ± 0.4475 std; same-submission draws as low as 0.77. Confirms: our 1.31
+  is already above their best counted draw; daily max-draw resubmits = correct strategy.
+  Also verbatim: hand-crafted tools hurt the model, prompt engineering > tooling; models
+  hallucinate classical-game priors and miss salient features.
+- **Determinism (694153):** Greg Kamradt — games use stable seeds, no procedural
+  randomness (one cosmetic exception: lf52 noise animation). Underwrites banking/transfer
+  replay correctness.
+- "Submit Error ~30min" thread (07-14): community fix = check `resource.setrlimit(RLIMIT_AS)`
+  — an address-space rlimit kills vLLM early in reruns. Not our failure mode; know it exists.
+- "[0.79 public] Open source code for Milestone 1" (Akhil Tolani): Gemma 4 31B QAT pruned
+  vocab + LeWM/JEPA dynamics — active thread (last comment <1 day). Below our line.
+- Milestone 2 = Sept 30 (final milestone; $37.5K pool per milestone-1 blog).
+
+## RANKED CANDIDATE QUEUE (from this sweep)
+1. **Ops, near-free:** adopt v9b safety pack — live soft_end 11h20m cap (+ competition_sim
+   validation) and the 3+dup fast offline commit gate for Save&Run validation runs.
+2. **Ops, cadence:** fast-save pattern for pre-validated configs (validate in
+   competition_sim/offline on version N, fast-save as version N+1, submit same day).
+3. **Score, zero-games:** dead-signature guard graft — measure loop pathology on our 11
+   zeros offline first; ship only if it fires and flips ≥1 game.
+4. **Score, A/B:** recovery-OFF variant (upstream v14 signal) vs our v5 — offline +
+   competition_sim; only replaces v5 if it wins over ≥2 draws.
+5. **Score, env-only:** context 32k→40-48k with concurrency 20→16 (live-throughput math
+   first: 55 games must fit 11h saturated) — the compaction lever without code.

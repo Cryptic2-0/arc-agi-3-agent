@@ -1,0 +1,6 @@
+{
+  "competition": "arc-prize-2026-arc-agi-3",
+  "kernel": "soumyacryptic/taaf-duck-harness-fork",
+  "version": 11,
+  "message": "duck fork v11 daily resubmit (auto-submit; context 40960 / concurrency 20 + ACTION7 fix; offline 1.99/0.95). LB keeps max draw."
+}
