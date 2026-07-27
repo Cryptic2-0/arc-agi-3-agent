@@ -996,3 +996,25 @@ Format per entry:
   verify tomorrow's cron run fired (Actions tab / submissions list); remaining queue:
   recovery-OFF A/B, fast-save cadence, capability levers for the 5 zeros
   (sk48/m0r0/s5i5/tr87/g50t).
+
+## 2026-07-27 — v11 LIVE = BAD (0.55 / 0.61) → REVERTED to v10; gate rule fixed; cron verified
+
+- **v11 live draws:** 07-26 first draw (ref `54995834`) = **0.55**; 07-27 cron draw
+  (ref `55017907`, submitted 04:03 UTC by the Actions cron — first autonomous fire,
+  ~3.7h GitHub cron lag, slot still claimed) = **0.61**. v10 lineage drew 1.46 / 0.89.
+  Two consecutive low draws + offline mean already lower (1.99 vs 2.21) = context
+  lever (40960/20) fails live. **v11 DEMOTED; `submit_config.json` reverted to
+  version 10.** Best LB stays **1.46**.
+- **Root cause of the bad promotion (approach fix, n=1 lesson):** the pre-registered
+  gate accepted a mean drop "within ±0.45 noise" because median improved. But the LB
+  metric IS a mean over games — median-favoring trades fat-tail games (vc33 8.57→0.72,
+  ar25 7.17→0.97 in the v11 run) for breadth, which the LB punishes. tok/s −21% (KV
+  pressure) also cut turns/game live. **NEW PROMOTION GATE: offline mean must be
+  ≥ incumbent mean (median = tiebreak only); prefer 2 independent Save&Run passes
+  before promoting a new daily default.**
+- **Auto-submit system: first real-world PASS.** Cron fired without the machine
+  awake, submitted the configured version, idempotency held (exactly one submission
+  on 07-27). Slot-leak fix confirmed working end-to-end.
+- **Next:** push revert; tomorrow's cron submits v10 automatically (max-draw
+  farming resumes on the proven version); lever queue unchanged — recovery-OFF A/B,
+  fast-save cadence, capability levers for the 5 zeros (sk48/m0r0/s5i5/tr87/g50t).

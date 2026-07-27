@@ -19,7 +19,7 @@ THE number = **Total score (0–100%)**, computed:
 - Eval set: **110 private games, never seen** (55 → public LB, 55 → private LB). 25 public
   games shipped locally (`environment_files/`) for dev only.
 
-## Status  (updated 2026-07-26 09:00 UTC — **best LB 1.46 (v10 draws 1.46 / 0.89) — INSIDE top 20** (07-26 cutoff 1.45, tied 4-way at 1.46; top 1.86). **v11 (context 40960 + concurrency 20) VALIDATED offline: 1.99/0.95, unique zeros 7→5, all banners, clean 6h36m** — passes the pre-registered gate (mean within ±0.45 noise of 2.21, median ≥0.88) → **v11 = daily default; 07-26 slot = v11 first draw, ref 54995834 PENDING.** **AUTO-SUBMIT LIVE: GitHub Actions cron 00:20 UTC (`.github/workflows/daily-submit.yml` + `scripts/daily_submit.py` + `submit_config.json`, secret KAGGLE_API_TOKEN set) — idempotent, manual submits win; slot-leak problem (7 lost) CLOSED.** Remaining queue: recovery-OFF A/B, fast-save cadence, capability levers for 5 zeros (sk48/m0r0/s5i5/tr87/g50t).)
+## Status  (updated 2026-07-27 — **v11 LIVE DRAWS BAD: 0.55 (07-26, ref 54995834) + 0.61 (07-27 cron, ref 55017907) vs v10 lineage 1.46/0.89 → v11 DEMOTED, daily default REVERTED to v10** (`submit_config.json` version 10). Best LB stays **1.46, inside top 20**. Auto-submit cron VERIFIED live: 07-27 run fired at 04:03 UTC (GitHub cron lag ~3.7h — normal, slot still claimed). **GATE FIX (n=1 lesson): old gate accepted mean drop "within noise" on median gain — wrong; LB metric IS the mean. New promotion rule: offline mean must be ≥ incumbent mean (median = tiebreak only), and prefer 2 independent Save&Run passes before promoting.** Remaining queue: recovery-OFF A/B, fast-save cadence, capability levers for 5 zeros (sk48/m0r0/s5i5/tr87/g50t).)
 - **Phase:** duck-harness fork line. **Best LB = 1.46 (v10 = v5 + ACTION7 reverse-map
   fix, first draw)**. v5 draw ceiling was 1.31 over 6 draws. GraphExplorer retired
   (0.24). Stack = Tufa grafts (banking/transfer/shortcircuit/recovery/retry_guard ON,
@@ -147,16 +147,17 @@ THE number = **Total score (0–100%)**, computed:
   at `external/my_duck_fork/taaf-duck-harness-fork.v5.ipynb` (recovered from the
   ae40551e session scratchpad — Kaggle API cannot pull old versions; keep local
   .vN backups from now on).
-- **Next actions:** (1) record v11 first draw (ref `54995834`) — if clearly bad,
-  revert `submit_config.json` to version 10; (2) verify tomorrow's Actions cron run
-  fired (repo Actions tab / submissions list ~00:30 UTC); (3) remaining queue from
+- **Next actions:** (1) DONE 07-27: v11 draws 0.55/0.61 = bad → `submit_config.json`
+  reverted to version 10 (v11 KILLED as default; context lever failed live);
+  cron verified fired (04:03 UTC run claimed the 07-27 slot); (2) apply NEW GATE
+  RULE to all future promotions: offline mean ≥ incumbent mean (median tiebreak
+  only), 2 Save&Run passes preferred; (3) remaining queue from
   [docs/recon.md](docs/recon.md) ADDENDUM 2026-07-14: (d) recovery-OFF A/B (upstream
   v14 dropped recovery "deliberately"), (b) fast-save pattern for pre-validated
   configs → same-day cadence; (4) capability levers for the 5 remaining zeros
   (sk48/m0r0/s5i5/tr87/g50t) — compaction quality, per-turn output cap A/B; (5) any
   rerun-shaped experiment → competition_sim first; (6) milestone 2 = Sept 30
-  ($37.5K pool), final = Nov 2. Daily-submit is now automated (cron); dead-sig
-  guard KILLED (07-25 measurement); context lever SHIPPED (v11).
+  ($37.5K pool), final = Nov 2.
 
 ## Key decisions
 | Date | Decision | Why |
