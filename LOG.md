@@ -1018,3 +1018,56 @@ Format per entry:
 - **Next:** push revert; tomorrow's cron submits v10 automatically (max-draw
   farming resumes on the proven version); lever queue unchanged — recovery-OFF A/B,
   fast-save cadence, capability levers for the 5 zeros (sk48/m0r0/s5i5/tr87/g50t).
+
+## 2026-07-28/29 — Full competition recon; ACTION7=UNDO discovered; v12 pushed (Save&Run in flight); source bundle mirrored
+
+- **Slot check 07-28:** cron submitted v10 (ref `55044246`), drew **0.79**. v10 draws now
+  1.46 / 0.89 / 0.79. Best LB stays 1.46. LB snapshot 07-28: top **1.86** (YUTO KOJIMA),
+  #2 1.61, #20 cutoff = **1.46 = us** — we sit exactly ON the cutoff; mean lift needed.
+- **Discussion sweep (headless-Edge ID harvest + r.jina.ai per-thread; ListTopics API now
+  404s, DDG/Bing scrapes empty):**
+  - **729985 — ORGANIZER: scored-run wall limit is 9 HOURS, not 12** ("For v3 it is 9hrs…
+    we should switch that" re docs inconsistency). Our 11h20m live soft-end could NEVER
+    fire before a 9h kill. Also: private LB scores are from the original run, never
+    recalculated; only 50% of public tasks are on the public LB.
+  - **728299 — scoring formula from the arc_agi package:** per-level
+    `min((baseline/actions)^2*100, 115)` — a level can pay up to **115** (better than
+    baseline pays above par); game = weighted mean capped. Depth >> marginal efficiency.
+  - 728220: arc-agi 0.9.8 vs 0.9.9 gives "significantly different agent performance";
+    competition pins 0.9.8. 728934: Claude Opus 5 scores 30% (off-hardware); commenters
+    note it can't run under the 9h/RTX6000 constraint. Nothing else load-bearing.
+- **Kernel recon (9 pulled):** two independent kernels (prvsiyan decision-ledger +
+  action7-shadow) map **ACTION7 -> model label "UNDO"** calling it the documented round
+  trip. **VERIFIED against official sources: ARC-AGI-3-Agents
+  `agents/templates/multimodal.py:166` maps `GameAction.ACTION7: "Undo"` (full map:
+  1=Up 2=Down 3=Left 4=Right 5=Perform 6=Click 7=Undo), and ar25's game code implements
+  ACTION7 as pop-saved-state-and-restore.** Our v10 exposed it as opaque "ACTION7" —
+  semantic label = free capability, same structural-mapping class as the v10 fix
+  (1.31→1.46, n=2 rule). 暗黑AGI (1.47 LB, 175-vote kernel) runs near-stock duck live =
+  verbatim+daily-farm meta confirmed. obirdy "verified world-model"/"state ledger" =
+  prompt-addendum class (our n=3 rule: loses live) — skipped. deep-reasoning-agent
+  (temp 0.2/top_k 3) and "179/183 levels" claims = not credible. cognitive-duck (3.6k-line
+  cognition patch) = unproven, high risk — skipped.
+- **UPSTREAM GONE: `kaggle kernels list --user thtennant` → "Not found"** (account deleted
+  or renamed). Their dataset `thtennant/taaf-kaggle-source-share-fork` (our kernel's
+  source bundle!) still resolves but is orphaned → **mirrored byte-identical to
+  `soumyacryptic/taaf-kaggle-source-share-fork-mirror`** (CC0; 87 files, src/ structure
+  verified extracted) and repointed the kernel at the mirror.
+- **v12 BUILT + PUSHED (kernel version 12, Save&Run RUNNING since ~18:5x UTC 07-28):**
+  v12 = v10 (v11 context lever reverted) + three changes:
+  1. **ACTION7 model-facing label "UNDO"** — `ENGINE_TO_MODEL_ACTION["ACTION7"]="UNDO"`,
+     `MODEL_TO_ENGINE_ACTION["UNDO"]="ACTION7"`, legacy `"ACTION7"` spelling kept as
+     fallback. Mapping-only; prompts byte-verbatim. Banner: `TAAF_V12 UNDO OK`.
+  2. **Live soft-end 11h20m → 8h20m** (9h organizer limit; typical live wall ~5h, tail
+     insurance only). Offline branch unchanged.
+  3. **Source bundle = our mirror** (cell 6 DATASET_SOURCES + kernel-metadata).
+  Grafts/flags/context (32768/28) all v10-verbatim. Local backups: .v11.ipynb (pulled),
+  .v12.ipynb staged; machine_shape re-verified in metadata.
+- **Gates when Save&Run completes (~4.5-5h; background monitor armed):** banner
+  `TAAF_V12 UNDO OK` + `TAAF_GRAFTS` banners; wall ~4.5h (2 waves at conc 28); **NEW GATE
+  RULE: offline mean ≥ v10's 2.21** (median tiebreak only). UNDO-relevant games to watch:
+  ar25, bp35, lf52, sb26, su15 + zero sk48 (6 ACTION7 games). If pass → submit_config.json
+  version 12 + push (cron takes over); if fail → v10 stays default, mirror-repoint still
+  wanted (re-cut v13 = v10 + mirror only, revalidate).
+- **Queue after v12 decision:** recovery-OFF A/B (upstream v14 evidence), fast-save
+  cadence, capability levers for remaining zeros (sk48/m0r0/s5i5/tr87/g50t).

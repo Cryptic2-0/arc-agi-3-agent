@@ -89,3 +89,15 @@ Source: competition page + repo README/changelog.
 - 2026-07-07 | "Offline scorer predicts LB direction" (REPORT §3) | v7: offline best (8/183) →
   LB 0.06 (crash). Offline predicts direction only when the kernel survives; runtime robustness
   on Kaggle is a separate, gating axis.
+- 2026-07-29 | "Scored-run wall budget is 12h (soft-end 11h20m protects it)" | Organizer
+  statement (discussion 729985): v3 scored-run limit is **9 hours**; the 12h figure was a
+  docs inconsistency they said they'd fix. An 11h20m soft end can never fire; v12 moves it
+  to 8h20m.
+- 2026-07-29 | "ACTION7 semantics are unknown/game-specific" | Official ARC-AGI-3-Agents
+  repo documents ACTION7 = "Undo" (multimodal.py human_actions: 1=Up 2=Down 3=Left 4=Right
+  5=Perform 6=Click 7=Undo); ar25 game code implements it as saved-state pop/restore.
+  Games may still deviate, but Undo is the designed convention.
+- 2026-07-29 | "Per-level score caps at 1.0 (can never beat baseline)" | arc_agi package
+  source (via discussion 728299): per-level = `min((baseline/actions)^2*100, 115)` — an
+  agent beating the human baseline pays up to 115. Efficiency above par counts; depth
+  still dominates (weighted mean by level index).
