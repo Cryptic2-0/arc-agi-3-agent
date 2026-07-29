@@ -101,3 +101,9 @@ Source: competition page + repo README/changelog.
   source (via discussion 728299): per-level = `min((baseline/actions)^2*100, 115)` — an
   agent beating the human baseline pays up to 115. Efficiency above par counts; depth
   still dominates (weighted mean by level index).
+- 2026-07-29 | "Semantic action labels are free capability (ACTION7 renamed UNDO should
+  help)" | v12 offline: mean 1.81 vs v10's 2.21, zeros 7→9, sk48 (ACTION7 game) still
+  0.00 across 3 runs. The neutral "ACTION7" label already let the model discover usage
+  by experiment; naming it "UNDO" changed behavior for the worse (possibly biased the
+  model toward undo-probing). Structural-mapping ≠ automatically good — the v10 win was
+  about EXECUTABILITY (broken reverse map), not naming.

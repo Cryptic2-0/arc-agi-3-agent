@@ -1071,3 +1071,28 @@ Format per entry:
   wanted (re-cut v13 = v10 + mirror only, revalidate).
 - **Queue after v12 decision:** recovery-OFF A/B (upstream v14 evidence), fast-save
   cadence, capability levers for remaining zeros (sk48/m0r0/s5i5/tr87/g50t).
+
+## 2026-07-29 03:5x UTC — v12 VALIDATED CLEAN BUT GATE-FAILED (1.81 < 2.21) → NOT promoted; v10 stays default; 07-29 slot = cron v10
+
+- **v12 Save&Run COMPLETE (20:12 UTC 07-28 → 00:37 UTC 07-29, wall 4h24m50s — identical
+  to v10's pace; conc 28 confirmed):** banners clean (`TAAF_V12 UNDO OK` + `TAAF_GRAFTS`
+  all five), **source bundle loaded from OUR MIRROR** (`/kaggle/input/taaf-kaggle-source-
+  share-fork-mirror`) — mirror path fully proven end-to-end. 52 runs, 0 won, 0 errors,
+  204.79 tok/s, 3.25M tokens.
+- **Score: mean 1.81 / median 0.46 → GATE FAIL (rule: mean ≥ incumbent v10's 2.21).**
+  Median up (0.46 vs 0.88? — v10 median was 0.88, so BOTH down); unique zeros ~9
+  (dc22/g50t/ka59/m0r0/sk48/sp80/tn36/tr87/wa30) vs v10's 7. **UNDO label did NOT lift:
+  sk48 (ACTION7 game, zero target) stayed 0.00 both passes + dup; ka59/wa30 flipped to 0.**
+  Fat tail: ft09 14.29, ar25 6.72 (ACTION7 game, decent), tu93 6.37. Within ±0.45 noise
+  of 2.21 − 0.40, but the v11 lesson stands: no rationalizing mean drops. **v12 NOT
+  promoted. UNDO-label lever: 0-for-1 offline, shelved (semantic labels ≠ free capability
+  on this stack; the v10 neutral mapping already let the model discover usage).**
+- **07-29 slot: cron fired 03:42 UTC (ref `55071144`, v10, PENDING) — 3rd autonomous
+  fire, idempotency proven again (our manual submit 2 min later correctly 400'd).**
+- **Carry-forwards from the v12 run (validated, want them in the next default):**
+  (a) **mirror repoint** — upstream thtennant deleted; mirror proven by this clean run;
+  (b) **live soft-end 8h20m** (9h organizer limit) — live-only, no offline signal, low
+  risk. → **Next: v13 = v10 exactly + mirror + 8h20m soft-end (NO UNDO)**, one clean
+  Save&Run as regression check (bundle bytes identical, expect ~2.2 ± noise), then
+  promote v13 to daily default on pass (it IS v10 live).
+- Queue unchanged: recovery-OFF A/B, fast-save cadence, zero-game capability levers.
