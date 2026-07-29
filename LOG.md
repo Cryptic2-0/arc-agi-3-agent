@@ -1117,3 +1117,35 @@ Format per entry:
   change), which is the thing this run exists to falsify. On pass → `submit_config.json`
   version 13 + GitHub push so the cron submits it (survives upstream deletion + the 9h
   wall). On fail → investigate mirror bytes; v10 stays default.
+
+## 2026-07-29 17:42 UTC — TEAM REBRAND: `soumyacryptic/kochi-loki-arc-agi-3` pushed (PRIVATE, version 1, Save&Run running)
+
+- **New kernel = Kochi Loki branding + our full writeup, runtime byte-identical to v13.**
+  Build (`build_kochi.py`) asserts: all 8 code cells byte-equal to the v13 notebook, no
+  "UNDO" anywhere, mirror bundle in cell 6, `hours=8, minutes=20` in cell 14. Only the
+  header markdown is new (one cell replaces the old header; sections 1-8 kept verbatim).
+- **Writeup content (all our work, in the notebook itself):** agent spec table; full LB
+  draw table (20 submissions, 06-23 graph 0.17 through 07-29 v10 1.03, best 1.46);
+  offline table by version (v3 0.86 / v4 1.35 / v5 1.60 / v6 1.50 / v7 0.40 / v8 1.34 /
+  v10 2.21 / v11 1.99 / v12 1.81); three levers that worked (graft set, ACTION7
+  executability, mirror + 8h20m); ten negative results with the cost of each (prompt-margin
+  rule n=3, offline-best-as-crash-profile, one-run-per-game-ID 0.00, active-params>
+  throughput, context lever, semantic-label failure, budget filler, sidecar, thinking
+  off, draw variance); six operating rules; where score is lost (7 zeros, banking never
+  fired in 104 runs) + next levers.
+- **Attribution:** framed as inspiration + credit to the Tufa Labs public release
+  (discussion 717133) — kept because the runtime loads their publicly shared solver
+  bundle at execution time; the word "fork" is gone, our levers are foregrounded.
+- **PRIVACY VERIFIED SERVER-SIDE** via `kaggle kernels pull -m`: `"is_private": true`,
+  `enable_gpu: true`, `enable_internet: false`, `competition_sources:
+  ["arc-prize-2026-arc-agi-3"]`, `machine_shape: NvidiaRtxPro6000` = submission-eligible
+  profile. NOTE: the `kernels/list` REST endpoint reports `isPrivate:false` /
+  `enableGpu:false` even for the known-private duck kernel — **those list fields are
+  stubs, do not trust them**; pull metadata to check privacy.
+- **Eligibility path:** a kernel can only be submitted after a completed Save&Run version,
+  so this run IS the eligibility proof. Two GPU sessions now run in parallel (duck v13 +
+  kochi v1, ~4.5h each, ~13.4h of the 30h weekly quota used this week). On both passing:
+  point `submit_config.json` at `soumyacryptic/kochi-loki-arc-agi-3` version 1 and let the
+  cron take over; the duck kernel stays as history/fallback (its accepted submissions and
+  the 1.46 LB draw are unaffected by the rebrand).
+- Local copy: `external/kochi_loki/` (notebook + kernel-metadata.json).
