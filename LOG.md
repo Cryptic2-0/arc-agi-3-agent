@@ -1096,3 +1096,24 @@ Format per entry:
   Save&Run as regression check (bundle bytes identical, expect ~2.2 ± noise), then
   promote v13 to daily default on pass (it IS v10 live).
 - Queue unchanged: recovery-OFF A/B, fast-save cadence, zero-game capability levers.
+
+## 2026-07-29 17:1x UTC — 07-29 draw = 1.03; v13 BUILT + PUSHED (kernel version 13, Save&Run running)
+
+- **07-29 draw resolved: `55071144` = 1.03** (v10, cron submit). v10 draw sequence now
+  **1.46 / 0.89 / 0.79 / 1.03** (mean 1.04, best 1.46). Draw spread confirms the ±0.4-0.5
+  fat tail; LB keeps the max, so daily resubmit stays the right play. v11 draws (0.55/0.61)
+  remain the worst pair on the board — revert was correct.
+- **v13 built = v10 EXACTLY + two risk-reducers, no capability change.** Build asserted
+  mechanically (`build_v13.py`): diff vs v10 = cells **[0, 6, 14]** only —
+  0 = header text, 6 = `DATASET_SOURCES` mirror repoint, 14 = live soft-end
+  `hours=11,minutes=20` → `hours=8,minutes=20`. Cell 12 restored to v10's ACTION7
+  reverse-map fix byte-for-byte (banner back to `TAAF_V10 ACTION7 OK`); asserted
+  **no "UNDO" anywhere in the code cells**. Context/concurrency stay 32768/28.
+- **Pushed: kernel version 13, Save&Run RUNNING (17:14 UTC).** Backup at
+  `external/my_duck_fork/taaf-duck-harness-fork.v13.ipynb`. Expect wall ~4.5h.
+- **Gate (regression check, not a lever test):** v13 IS v10 mechanically, so expect
+  **mean ≈ 2.21 ± noise**; promotion rule = mean ≥ 2.21 with the usual noise read — a
+  large drop would mean the MIRROR BUNDLE differs from upstream (the only offline-visible
+  change), which is the thing this run exists to falsify. On pass → `submit_config.json`
+  version 13 + GitHub push so the cron submits it (survives upstream deletion + the 9h
+  wall). On fail → investigate mirror bytes; v10 stays default.
