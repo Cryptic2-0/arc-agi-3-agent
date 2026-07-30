@@ -101,6 +101,17 @@ Source: competition page + repo README/changelog.
   source (via discussion 728299): per-level = `min((baseline/actions)^2*100, 115)` — an
   agent beating the human baseline pays up to 115. Efficiency above par counts; depth
   still dominates (weighted mean by level index).
+- 2026-07-30 | "A single offline Save&Run mean is a reliable promotion gate (n=1)" |
+  Two runs of **byte-identical code** (duck v13 and the Kochi Loki rebrand, same hardware,
+  same 26 games x 2 passes, 30 min apart) scored **2.49** and **1.71** (medians 0.41 /
+  0.31). Per-game: `sk48-dup` = 0.00 in one, 2.78 in the other. Mechanism: analyzer
+  read-timeouts against the local vLLM reshuffle which games get budget, and several games
+  sit on a give-up/clear coin flip at level 1. **Offline single-run noise is ~0.8 wide —
+  larger than any lever we have measured except the ACTION7 fix.** Therefore: a mean delta
+  under ~0.8 from one run each is NO EVIDENCE, in either direction. v12's 1.81-vs-2.21
+  "failure" was a draw from this distribution, not a measured regression. Promotion now
+  needs paired runs or a same-session A/B; live LB evidence (v11's 0.55/0.61) is unaffected
+  because that was two independent live draws.
 - 2026-07-29 | "Semantic action labels are free capability (ACTION7 renamed UNDO should
   help)" | v12 offline: mean 1.81 vs v10's 2.21, zeros 7→9, sk48 (ACTION7 game) still
   0.00 across 3 runs. The neutral "ACTION7" label already let the model discover usage

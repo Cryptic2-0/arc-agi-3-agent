@@ -1,6 +1,6 @@
 {
   "competition": "arc-prize-2026-arc-agi-3",
-  "kernel": "soumyacryptic/taaf-duck-harness-fork",
-  "version": 10,
-  "message": "duck fork v10 daily resubmit (auto-submit; ACTION7 fix, context 32768 / concurrency 28; best LB 1.46). LB keeps max draw."
+  "kernel": "soumyacryptic/kochi-loki-arc-agi-3",
+  "version": 1,
+  "message": "Kochi Loki agent daily resubmit (ACTION7 executability fix + graft set, context 32768 / concurrency 28, mirrored source bundle, 8h20m soft end; validated Save&Run 4h24m clean). LB keeps max draw."
 }

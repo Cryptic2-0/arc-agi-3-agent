@@ -1149,3 +1149,39 @@ Format per entry:
   cron take over; the duck kernel stays as history/fallback (its accepted submissions and
   the 1.46 LB draw are unaffected by the rebrand).
 - Local copy: `external/kochi_loki/` (notebook + kernel-metadata.json).
+
+## 2026-07-30 15:00 UTC — v13 GATE PASS (2.49) + Kochi Loki run clean (1.71) → **IDENTICAL CODE, 0.78 SPREAD**; Kochi promoted to daily default
+
+- **v13 Save&Run COMPLETE (07-29 17:22 → 21:46 UTC, wall 4h24m39s):** mean **2.49** /
+  median 0.41, 26 games x 2 passes = 52 runs, 0 won, 195.74 tok/s, 3.11M tokens.
+  Banners `TAAF_V10 ACTION7 OK` + `TAAF_GRAFTS` (all five) + `source bundle =
+  /kaggle/input/taaf-kaggle-source-share-fork-mirror`. **GATE PASS: 2.49 >= v10's 2.21.**
+  Mirror repoint + 8h20m soft-end both validated.
+- **Kochi Loki v1 Save&Run COMPLETE (07-29 17:51 → 22:15 UTC, wall 4h24m31s):** mean
+  **1.71** / median 0.31, same 52 runs, 203.34 tok/s, 3.23M tokens, same banners, bundle
+  mounted at `/kaggle/input/datasets/soumyacryptic/taaf-kaggle-source-share-fork-mirror`.
+- **THE FINDING — offline single-run noise is ~0.8, larger than most levers we grade.**
+  The two runs above execute **byte-identical code** (build asserted all 8 code cells
+  equal) on identical hardware and games, ~30 min apart: **2.49 vs 1.71, median 0.41 vs
+  0.31.** Per-game whiplash in the same pair: `sk48-dup` = **0.00** in one run, **2.78**
+  in the other; `lp85` 2.78, `su15` 2.22, `bp35` 0.44 in the Kochi run vs zeros/timeouts
+  in the other. Cause: analyzer read-timeouts against the local vLLM (both logs) shuffle
+  which games get budget, and gave_up-at-level-1 is a coin flip on several games.
+  **Consequence: every single-run offline verdict in this log carries +/-0.4 (1 sigma-ish)
+  and the n=1 promotion gate has been grading noise.** v12's "1.81 < 2.21 = fail" is NOT
+  a proven regression -- it is one draw from this distribution. (v12 stays shelved: no
+  positive evidence either, and it costs a slot to test.) **v11's demotion STANDS** --
+  that was live LB evidence (0.55/0.61), not offline.
+- **GATE RULE v2 (supersedes the 07-27 rule):** promote on **paired evidence** -- either
+  2 Save&Run passes of the candidate vs the incumbent's known distribution, or a
+  same-session A/B. A single-run mean delta below ~0.8 is indistinguishable from noise;
+  treat it as "no evidence", not as a pass or a fail. Cheap levers (no capability change)
+  may still ship on a clean run + mechanical diff proof, which is what v13/Kochi did.
+- **07-30 slot: cron fired 03:30 UTC with v10, ref `55098418` = 0.90.** v10 draws now
+  1.46 / 1.03 / 0.90 / 0.89 / 0.79 (5 draws, mean 1.01, best 1.46 unchanged).
+- **PROMOTED: `submit_config.json` -> `soumyacryptic/kochi-loki-arc-agi-3` version 1.**
+  Rationale: its runtime is v13 (= v10 + mirror + soft-end) proven by a clean 4h24m run,
+  it carries the team branding, and it removes the deleted-upstream dependency. The duck
+  kernel stays untouched as fallback; all accepted submissions and the 1.46 best draw are
+  unaffected. Next cron fire (07-31 00:20 UTC) submits Kochi v1 -- first live draw of the
+  branded kernel.
