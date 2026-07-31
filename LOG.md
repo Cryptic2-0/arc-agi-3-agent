@@ -1185,3 +1185,23 @@ Format per entry:
   kernel stays untouched as fallback; all accepted submissions and the 1.46 best draw are
   unaffected. Next cron fire (07-31 00:20 UTC) submits Kochi v1 -- first live draw of the
   branded kernel.
+
+## 2026-07-31 ~15:05 UTC — 07-31 slot claimed MANUALLY with Kochi Loki v1 (cron SKIPPED); auto-submit hardened to 5 fires/day
+
+- **First Kochi Loki draw submitted: ref `55124569` (PENDING)**, kernel
+  `soumyacryptic/kochi-loki-arc-agi-3` version 1, via `scripts/daily_submit.py`.
+  The submit endpoint accepted the new kernel => **eligibility proven end-to-end**
+  (private notebook + GPU + internet off + competition source + completed Save&Run).
+- **Why manual: GitHub never created the 07-31 scheduled run.** Actions API shows
+  workflow `daily-submit` state **active**, and only 5 runs total: 07-26 (dispatch),
+  07-27, 07-28, 07-29, 07-30 - all `success`, all lagging 3.2-3.7h behind the 00:20 UTC
+  cron. **No 07-31 entry exists at all** - not a failure, not a queued run: GitHub
+  silently dropped the scheduled fire (documented behavior under load). Observed miss
+  rate 1-in-5 days = a 20% chance of losing a daily slot, and slots are the scarcest
+  resource we have.
+- **FIX (committed): 5 cron fires per UTC day** - 00:20, 04:37, 10:43, 16:53, 21:47 -
+  at off-the-hour minutes (GitHub sheds load hardest at :00). `daily_submit.py` is
+  already idempotent (lists today's submissions, skips if used), so extra fires are
+  no-ops; a manual submit still wins. Any single fire landing inside the UTC day claims
+  the slot, so a dropped run now costs nothing unless all five drop.
+- **Also confirmed:** 07-30 draw = **0.90** (ref `55098418`, v10 via cron).

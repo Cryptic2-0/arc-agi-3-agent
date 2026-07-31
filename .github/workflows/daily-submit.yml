@@ -2,9 +2,17 @@ name: daily-submit
 
 on:
   schedule:
-    # 00:20 UTC daily; team submission slot resets at UTC midnight.
-    # GitHub cron can lag - any time inside the UTC day still claims the slot.
+    # The team submission slot resets at UTC midnight. daily_submit.py is idempotent
+    # (it skips when the slot is already used), so we fire several times a day on
+    # purpose: GitHub SILENTLY DROPS scheduled runs under load - 2026-07-31 produced
+    # no run at all (workflow active, no failure, no entry in the run list), which
+    # would have cost the day's slot. Every fire inside the UTC day claims it.
+    # Off-the-hour minutes: GitHub sheds load hardest at :00.
     - cron: "20 0 * * *"
+    - cron: "37 4 * * *"
+    - cron: "43 10 * * *"
+    - cron: "53 16 * * *"
+    - cron: "47 21 * * *"
   workflow_dispatch: {}
 
 jobs:
