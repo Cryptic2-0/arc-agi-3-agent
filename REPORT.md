@@ -80,6 +80,33 @@ Source: competition page + repo README/changelog.
    profile, not a performance profile. Any submission needs a full clean Save&Run on Kaggle
    hardware first; offline wins don't transfer if the kernel dies on hidden games.
 
+### The base model is a first-order lever, and it moves without us (2026-09-02)
+8. **A base-model release re-ranks the whole leaderboard in about two weeks.**
+   `Qwen3.8-27B-FP8` shipped 2026-08-14. Between 07-28 and 09-01 the public top went
+   **1.86 → 7.51** and the #20 cutoff went **1.46 → 2.97**, while our score sat at 1.46 and
+   32 consecutive daily draws came back in 0.50–1.35. Nothing about our agent got worse;
+   the reference frame moved. **Rule: check for a new base checkpoint on the same cadence
+   as the leaderboard, and treat "the model we serve" as a tracked config axis, not a
+   constant.** Corollary to the v7 lesson — that one said capability tracks *active*
+   params (a 3B-active MoE failed); this one says the dense-27B slot itself gets refilled.
+9. **A public recipe is calibrated by its authors' LB rows, not by its notebook title.**
+   `lb-9-arc3-duck-v12-with-qwen-3-8-27b` has 268 votes; its author's team scores **2.23**.
+   thtennant, who wrote the graft stack everyone forks, scores **1.93**. keithtyser, running
+   NVFP4 + MTP, scores **2.36**. Each is a *max over 41–99 draws*. So the entire public
+   Qwen3.8 recipe is worth a ~2.0–2.4 best-draw — while the top of the board is 7.51.
+   **Cloning the public frontier is the entry ticket, not the win.**
+10. **Kaggle *Models* do not mount where Kaggle *datasets* do.** A Model lands at
+    `/kaggle/input/models/<owner>/<slug>/<framework>/<variation>/<version>`. The TAAF bundle's
+    `resolve_kaggle_dataset_path()` probes only `TAAF_KAGGLE_INPUT_PATHS`, `/kaggle/input/<slug>`
+    and `/kaggle/input/datasets/<owner>/<slug>`, then falls through to a non-existent path —
+    vLLM dies ~10 min in with the weights mounted and unreachable. The fix is one line in the
+    notebook (publish the model ref into `TAAF_KAGGLE_INPUT_PATHS`), and it is testable
+    offline by exec'ing the patched setup command's resolver against the real
+    `setup_commands.json`. Do that before every model swap.
+11. **`maxDailySubmissions = 1` for this track** (competitions API). Public write-ups quoting
+    "5/day" are describing ARC-AGI-2. There is no submission-count lever; the only way to
+    raise the max draw is to raise the draw distribution.
+
 ## Superseded beliefs
 <!-- date | belief we held | what overruled it (result/source) -->
 - 2026-07-07 | "Build no-LLM graph exploration; LLM agents are the wrong path (~0.3%)" |
@@ -118,3 +145,8 @@ Source: competition page + repo README/changelog.
   by experiment; naming it "UNDO" changed behavior for the worse (possibly biased the
   model toward undo-probing). Structural-mapping ≠ automatically good — the v10 win was
   about EXECUTABILITY (broken reverse map), not naming.
+- 2026-09-02 | "Our stack is at the frontier; the gap to the top is a few tenths of graft
+  tuning" | The 07-28 snapshot (top 1.86, #20 cutoff 1.46 = us) was true and is now stale.
+  On 09-01 the top is 7.51 and #20 is 2.97 — we are rank 488 of 2694. The whole delta
+  arrives from an axis we never varied (the base checkpoint), not from the graft/prompt
+  axes this log spent twelve versions on.

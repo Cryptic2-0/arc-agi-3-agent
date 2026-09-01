@@ -1212,3 +1212,81 @@ Format per entry:
   submit still wins. Cost of the insurance is zero; cost of one genuinely lost slot is a
   whole day of draw.
 - **Also confirmed:** 07-30 draw = **0.90** (ref `55098418`, v10 via cron).
+
+## 2026-09-02 — MONTH-GAP RECON: the field swapped base model and we did not. v14/v15 built + pushed (Qwen3.8-27B-FP8)
+
+- **Where we actually stand: rank 488 / 2694, score 1.46** — the same 1.46 drawn on
+  2026-07-24 (v10). The daily cron never missed: 32 consecutive draws 07-31 → 09-01, all
+  Kochi Loki v1, **range 0.50–1.35, mean ~0.84, max 1.35** — not one beat the July best.
+  Ops were fine; the agent stopped being competitive.
+- **The leaderboard re-formed while we stood still.** 07-12 top was 1.56, 07-28 top 1.86,
+  #20 cutoff 1.46 = us. **09-01: top = 7.51 (cstl), then 4.99, Tufa Labs 4.71, 4.52, 4.45,
+  4.05 … #20 cutoff = 2.97.** Our 1.46 is now ~250 places below the top-20 line.
+- **Cause found: a new base model. `Qwen3.8-27B-FP8` was released 2026-08-14 (Apache 2.0).**
+  Every version we ever shipped (v1…v13, Kochi v1) serves **Qwen3.6-27B-FP8**, the weights
+  the June-30 duck came with. The base model is the one axis this project has never varied.
+  The field moved within days: the top public kernels all pin the same Kaggle Model
+  `foysalemonshanto/qwen3-8-27b-fp8-repacked-v1/PyTorch/hf-fp8/1` —
+  `foysalemonshanto/lb-9-arc3-duck-v12-with-qwen-3-8-27b` (268 votes),
+  `keithtyser/duck-qwen3-8-27b-fp8`, and thtennant's own `arc3-duck-v21` … `v30`.
+  Same dense-27B **active**-parameter class, so the v7 MoE lesson does not apply.
+- **Calibration on what the model swap is worth — measured from the swappers' own LB rows,
+  not from their titles:** thtennant (`Beyond Good and Eval`) **1.93**, FOYSAL **2.23**,
+  keithtyser **2.36**. Each is a max over 41–99 draws. **So the public recipe is worth
+  roughly a 2.0–2.4 best-draw, i.e. ~1.6× our current 1.46 — it is the entry ticket to the
+  race, not a 5.** The 7.51 and 4.71 at the top are doing something not published.
+- **`maxDailySubmissions = 1`, verified against the Kaggle competitions API** (`userRank`
+  488 came from the same call). Web sources quoting "5/day" are describing the ARC-AGI-2
+  track. There is no extra-draws lever: 1 draw/day, **28 draws left to milestone 2
+  (Sept 30), 61 to final (Nov 2)**.
+- **Upstream is back and has moved on.** `thtennant/taaf-kaggle-source-share-fork` was
+  re-published (2026-09-01, 613 KB vs our 07-28 mirror's 449 KB) and now ships
+  `src/taaf-grafts` with 13 new flags on top of our five: goalkeep, hudmask, clickmap,
+  searchmap, clockwatch, lawbook, winframe, carryover, undo, untried, tally, bandlevel,
+  deathclock. All default OFF with a stated all-flags-off byte-identity guarantee.
+  His v30 runs `{efficiency, retry_guard, shortcircuit, goalkeep, hudmask, clickmap,
+  searchmap, clockwatch, lawbook, winframe, carryover, undo, untried, tally, bandlevel}`.
+- **Our ACTION7 fix is still ours.** `grep -r ACTION7 src/ARC3-Inference/` on the fresh
+  upstream bundle returns nothing — the reverse map still has no ACTION7 entry. The v10
+  lever (1.31 → 1.46) survives into both new builds.
+- **BUILT + PUSHED (`scripts/build_v14.py`, anchored edits, asserted diffs):**
+  - **v14** = Kochi v1 + Qwen3.8 pin + upstream-fork bundle repoint. Graft flags unchanged
+    (our v5 set). Changed cells `[0, 6, 8]`. Pushed as **kernel version 2** of
+    `soumyacryptic/kochi-loki-arc-agi-3`, Save&Run RUNNING.
+  - **v15** = v14 + the upstream v30 graft set. Changed cells `[0, 6, 8, 12]`; **v14 vs v15
+    differ in cells [0, 12] only** — a clean same-lever A/B. Pushed as new kernel
+    `soumyacryptic/kochi-loki-arc-agi-3-v15` version 1, Save&Run RUNNING. Server-side
+    metadata verified by `kernels pull -m`: `is_private true`, GPU on, internet off,
+    `NvidiaRtxPro6000`, competition source, Qwen3.8 model attached.
+- **A bug caught offline that would have cost a GPU session.** The bundled setup resolves
+  weights with `resolve_kaggle_dataset_path(MODEL_OWNER, MODEL_SLUG)`, which checks
+  `TAAF_KAGGLE_INPUT_PATHS` and then the two *dataset* mount shapes. A Kaggle **Model**
+  mounts at `/kaggle/input/models/<owner>/<slug>/<framework>/<variation>/<version>` — neither
+  of those — so the setup would have fallen through to a non-existent path and vLLM would
+  have died ~10 min in with the weights sitting right there. Fix: cell 6 publishes
+  `kaggle_input_paths[QWEN_MODEL_REF] = str(QWEN_MODEL_PATH)` before `setup_env` is built.
+  **Verified offline by executing the patched setup command's resolver against the real
+  `setup_commands.json`:** `MODEL_PATH -> /kaggle/input/models/foysalemonshanto/…/hf-fp8/1`,
+  `SERVED_MODEL_NAME -> Qwen/Qwen3.8-27B-FP8`, all three assignments rewritten 1×.
+- **Deferred: the mirror re-push.** `kaggle datasets version` on
+  `soumyacryptic/taaf-kaggle-source-share-fork-mirror` was blocked by the local sandbox, so
+  v14/v15 attach **upstream's** bundle directly. Upstream deleted it once before (07-28), so
+  this is a live single point of failure. A byte copy of the 09-01 snapshot is saved at
+  `external/fork_bundle/` (gitignored) — re-mirroring is one command once the push is allowed.
+- **Gates when the two runs land (~4.5h):** banners `TAAF_V14 QWEN38 MOUNT OK` +
+  `TAAF_V14 QWEN38 SETUP PATCHED` + `TAAF_V10 ACTION7 OK` + `TAAF_GRAFTS FEATURES={…}`;
+  bundle line = `taaf-kaggle-source-share-fork`; wall ~4.5h. **Read the means against GATE
+  RULE v2 (offline single-run noise ≈ 0.8): v14-vs-v15 is a legitimate same-session A/B, but
+  either one against v10's 2.21 is a single draw and proves little on its own.** The load-
+  bearing question this pair answers is not "which is better" but "does the Qwen3.8 path
+  run clean end to end" — the LB, not the offline mean, decides the rest.
+- **Honest read on the 5.0 target:** 5.0 is 2nd place today and above Tufa Labs. The public
+  recipe tops out near 2.4. Model swap + v30 grafts + our ACTION7 fix is the credible path
+  to **~2.5–3.5 best-draw over the remaining 28–61 draws**; 5 needs a lever nobody has
+  published. Named candidates, in EV order: (a) **throughput** — keithtyser serves
+  `RadixArk/Qwen3.8-Flash-Next-NVFP4` with 3-token MTP speculative decoding; our own
+  measurement says thinking eats ~85% of the token budget and only ~150 env actions/game get
+  taken, so tokens/s converts almost linearly into actions, the one thing we know is binding;
+  (b) the 7 zero games, which are capability-bound, not time-bound; (c) `analyzer_timeout`
+  (keithtyser pins 900 s) — our own logs blame analyzer read-timeouts for the ±0.8 offline
+  noise, so this may be a variance lever as much as a mean lever.

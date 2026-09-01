@@ -19,7 +19,8 @@ THE number = **Total score (0–100%)**, computed:
 - Eval set: **110 private games, never seen** (55 → public LB, 55 → private LB). 25 public
   games shipped locally (`environment_files/`) for dev only.
 
-## Status  (updated 2026-07-30 15:00 UTC — **DAILY DEFAULT IS NOW `soumyacryptic/kochi-loki-arc-agi-3` version 1** (team-branded PRIVATE kernel, runtime = v13 = v10 + mirrored bundle + 8h20m soft-end; validated clean Save&Run 4h24m31s, banners OK). v13 on the duck kernel passed its gate: **mean 2.49** vs v10's 2.21. **BIG FINDING: the Kochi run executes BYTE-IDENTICAL code and scored 1.71 — offline single-run noise is ~0.8 wide**, so any n=1 mean delta under that is no evidence (v12's "fail" included). **GATE RULE v2: paired runs or same-session A/B for capability levers; clean-run + mechanical diff proof is enough for no-capability-change levers.** 07-30 slot = cron v10, ref `55098418` = **0.90**; v10 draws 1.46/1.03/0.90/0.89/0.79. Next cron fire (07-31 00:20 UTC) draws the branded kernel for the first time. Duck kernel kept as fallback.
+## Status  (updated 2026-09-02 — **WE FELL OFF THE BOARD: rank 488 / 2694, score 1.46, unchanged since 07-24.** The cron never missed — 32 straight draws 07-31→09-01, all Kochi v1, range 0.50–1.35, mean ~0.84, none beat July. Meanwhile the LB re-formed: top **7.51** (cstl), then 4.99, Tufa Labs 4.71, 4.52, 4.45, 4.05; **#20 cutoff = 2.97**. **CAUSE: a new base model.** `Qwen3.8-27B-FP8` shipped 2026-08-14 (Apache 2.0) and the field swapped within days; every version we have ever run (v1…v13, Kochi v1) still serves **Qwen3.6-27B-FP8**, the June-30 duck's weights — the one axis this project never varied. Top public kernels all pin the same Kaggle Model `foysalemonshanto/qwen3-8-27b-fp8-repacked-v1/PyTorch/hf-fp8/1` (foysal's LB-9 notebook, keithtyser, thtennant v21…v30). **Calibration, from the swappers' own LB rows:** thtennant 1.93, FOYSAL 2.23, keithtyser 2.36 — so the public recipe buys a **~2.0–2.4 best-draw**, the entry ticket, not a 5. **`maxDailySubmissions = 1`** (verified against the competitions API; the "5/day" figure online is the ARC-AGI-2 track) → **28 draws left to milestone 2 (Sept 30), 61 to final (Nov 2)**; there is no extra-draws lever. **ACTION: v14 + v15 built and pushed, both Save&Run RUNNING.** v14 = Kochi v1 + Qwen3.8 pin + repoint to the (re-published, now graft-rich) `thtennant/taaf-kaggle-source-share-fork`, graft flags unchanged — isolates the model lever. v15 = v14 + upstream's v30 graft set (goalkeep/hudmask/clickmap/searchmap/clockwatch/lawbook/winframe/carryover/undo/untried/tally/bandlevel). Diff asserted by `scripts/build_v14.py`: v14 changes cells [0,6,8]; **v14 vs v15 differ in [0,12] only** = clean same-session A/B. Our **ACTION7 reverse-map fix survives in both** — the fresh upstream bundle still has no ACTION7 entry, so it stays a private edge. Daily default is UNCHANGED (`submit_config.json` still Kochi v1) until these validate. **5.0 is 2nd place today and above Tufa Labs; the credible path from this work is ~2.5–3.5 best-draw, and 5 needs an unpublished lever — see the queue.**)
+- **(prev 2026-07-30)** **DAILY DEFAULT IS NOW `soumyacryptic/kochi-loki-arc-agi-3` version 1** (team-branded PRIVATE kernel, runtime = v13 = v10 + mirrored bundle + 8h20m soft-end; validated clean Save&Run 4h24m31s, banners OK). v13 on the duck kernel passed its gate: **mean 2.49** vs v10's 2.21. **BIG FINDING: the Kochi run executes BYTE-IDENTICAL code and scored 1.71 — offline single-run noise is ~0.8 wide**, so any n=1 mean delta under that is no evidence (v12's "fail" included). **GATE RULE v2: paired runs or same-session A/B for capability levers; clean-run + mechanical diff proof is enough for no-capability-change levers.** 07-30 slot = cron v10, ref `55098418` = **0.90**; v10 draws 1.46/1.03/0.90/0.89/0.79. Next cron fire (07-31 00:20 UTC) draws the branded kernel for the first time. Duck kernel kept as fallback.
 - **(prev 2026-07-29)** **v13 PUSHED, Save&Run RUNNING (kernel version 13).** v13 = v10 EXACTLY + 2 risk-reducers, asserted diff = cells [0 header, 6 mirror bundle, 14 soft-end 8h20m]; NO UNDO (cell 12 = v10 verbatim), context/conc stay 32768/28. It IS v10 live, so this run is a **regression check**: expect mean ≈ 2.21 ± noise; a big drop = the mirror bundle differs from upstream (the only offline-visible change). On pass → `submit_config.json` version 13 + GitHub push (cron submits it) → survives upstream deletion + the 9h wall. **07-29 draw resolved = 1.03** (ref `55071144`, v10 via cron); v10 draws now 1.46 / 0.89 / 0.79 / 1.03, best LB stays 1.46.
 - **(prev 2026-07-29)** **v12 GATE-FAILED: mean 1.81 < v10's 2.21 (median 0.46, zeros 7→9) → NOT promoted; UNDO-label lever shelved (sk48 stayed 0 despite semantic label). Run itself CLEAN: wall 4h25m, banners OK, and the MIRROR bundle path is proven end-to-end.** Daily default stays v10 (`submit_config.json` version 10). 07-29 slot = cron v10 (ref `55071144`, 03:42 UTC, 3rd autonomous fire; manual same-minute submit correctly 400'd = idempotency proven). **NEXT: v13 = v10 exactly + mirror repoint + live soft-end 8h20m (NO UNDO), one Save&Run regression check (~2.2 expected), then promote — it IS v10 live but survives upstream deletion + the 9h wall.** Context intel (07-28 recon): organizer says scored-run limit = 9h not 12h (disc 729985); per-level score pays to 115 (disc 728299); upstream thtennant DELETED (bundle mirrored to `soumyacryptic/taaf-kaggle-source-share-fork-mirror`); LB top 1.86, #20 cutoff = 1.46 = us. Queue: recovery-OFF A/B, fast-save cadence, capability levers for zeros.)
 - **(prev 2026-07-27)** v11 live draws bad: 0.55 + 0.61 vs v10 lineage 1.46/0.89 → v11 DEMOTED, daily default reverted to v10 (`submit_config.json` version 10). Auto-submit cron verified live (04:03 UTC fire, ~3.7h lag = normal). **GATE FIX (n=1 lesson): LB metric IS the mean — offline mean must be ≥ incumbent mean (median = tiebreak only), prefer 2 independent Save&Run passes.**
@@ -150,17 +151,25 @@ THE number = **Total score (0–100%)**, computed:
   at `external/my_duck_fork/taaf-duck-harness-fork.v5.ipynb` (recovered from the
   ae40551e session scratchpad — Kaggle API cannot pull old versions; keep local
   .vN backups from now on).
-- **Next actions:** (1) DONE 07-27: v11 draws 0.55/0.61 = bad → `submit_config.json`
-  reverted to version 10 (v11 KILLED as default; context lever failed live);
-  cron verified fired (04:03 UTC run claimed the 07-27 slot); (2) apply NEW GATE
-  RULE to all future promotions: offline mean ≥ incumbent mean (median tiebreak
-  only), 2 Save&Run passes preferred; (3) remaining queue from
-  [docs/recon.md](docs/recon.md) ADDENDUM 2026-07-14: (d) recovery-OFF A/B (upstream
-  v14 dropped recovery "deliberately"), (b) fast-save pattern for pre-validated
-  configs → same-day cadence; (4) capability levers for the 5 remaining zeros
-  (sk48/m0r0/s5i5/tr87/g50t) — compaction quality, per-turn output cap A/B; (5) any
-  rerun-shaped experiment → competition_sim first; (6) milestone 2 = Sept 30
-  ($37.5K pool), final = Nov 2.
+- **Next actions:** (1) when v14/v15 land (~4.5h), gate on banners `TAAF_V14 QWEN38 MOUNT OK`
+  + `TAAF_V14 QWEN38 SETUP PATCHED` + `TAAF_V10 ACTION7 OK` + `TAAF_GRAFTS FEATURES={...}`,
+  bundle line = `taaf-kaggle-source-share-fork`, wall ~4.5h; the pair is a legitimate A/B
+  against each other, but either one vs v10's 2.21 is a single draw (GATE RULE v2, noise
+  ~0.8) — what this pair really proves is that the Qwen3.8 path runs clean end to end.
+  (2) on a clean run, point `submit_config.json` at the winner and let the cron take over;
+  the LB, not the offline mean, decides between v14 and v15. (3) **RE-MIRROR the upstream
+  bundle** — `kaggle datasets version` was blocked by the local sandbox, so v14/v15 attach
+  thtennant's dataset directly and he deleted it once already (07-28); a byte copy of the
+  09-01 snapshot sits in `external/fork_bundle/`, re-mirroring is one command.
+  (4) **throughput is the next real lever**: keithtyser serves `RadixArk/Qwen3.8-Flash-Next-NVFP4`
+  with 3-token MTP speculative decoding; our own measurement (thinking eats ~85% of the token
+  budget, only ~150 env actions/game get taken) says tokens/s converts near-linearly into
+  actions, the one constraint we know binds. (5) `analyzer_timeout` (keithtyser pins 900s) —
+  our logs blame analyzer read-timeouts for the ±0.8 offline noise, so it may cut variance
+  as well as raise the mean. (6) capability levers for the 7 zeros (sk48/m0r0/s5i5/tr87/g50t/
+  dc22/tn36) — zeros are capability-bound, not time-bound. (7) any rerun-shaped experiment
+  still goes through `competition_sim` first. (8) milestone 2 = Sept 30 ($37.5K pool),
+  final = Nov 2.
 
 ## Key decisions
 | Date | Decision | Why |
