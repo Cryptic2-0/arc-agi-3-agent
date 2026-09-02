@@ -1,6 +1,6 @@
 {
   "competition": "arc-prize-2026-arc-agi-3",
   "kernel": "soumyacryptic/kochi-loki-arc-agi-3",
-  "version": 1,
-  "message": "Kochi Loki agent daily resubmit (ACTION7 executability fix + graft set, context 32768 / concurrency 28, mirrored source bundle, 8h20m soft end; validated Save&Run 4h24m clean). LB keeps max draw."
+  "version": 2,
+  "message": "Kochi Loki v14: Qwen3.8-27B-FP8 base-model swap (from Qwen3.6) + ACTION7 executability fix + v5 graft set, upstream fork bundle, context 32768 / concurrency 28, 8h20m soft end. Validated Save&Run: offline mean 3.61 vs incumbent 2.49, 22 levels cleared, 246 tok/s. LB keeps max draw."
 }

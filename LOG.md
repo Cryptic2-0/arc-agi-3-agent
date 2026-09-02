@@ -1290,3 +1290,51 @@ Format per entry:
   (b) the 7 zero games, which are capability-bound, not time-bound; (c) `analyzer_timeout`
   (keithtyser pins 900 s) — our own logs blame analyzer read-timeouts for the ±0.8 offline
   noise, so this may be a variance lever as much as a mean lever.
+
+## 2026-09-02 — v14 + v15 BOTH CLEAN; Qwen3.8 path proven; v14 mean 3.61 → promoted to daily default
+
+- **Both Save&Run runs COMPLETE and clean.** Banners in both:
+  `TAAF_V14 QWEN38 MOUNT OK: /kaggle/input/models/foysalemonshanto/qwen3-8-27b-fp8-repacked-v1/pytorch/hf-fp8/1 (18 shards)`,
+  `TAAF_V14 QWEN38 SETUP PATCHED: {'MODEL_OWNER': 1, 'MODEL_SLUG': 1, 'SERVED_MODEL_NAME': 1}`,
+  vLLM served `Qwen/Qwen3.8-27B-FP8` at `max_model_len 65536`, smoke test
+  `Generated: 2 + 2 equals 4.` The Kaggle-Model mount fix worked exactly as simulated —
+  the one bug that would have cost a session did not fire.
+- **Scores (26 runs each = 25 public games + sk48 dup):**
+
+  | | incumbent Qwen3.6 | **v14** (model swap only) | **v15** (+ v30 grafts) |
+  |---|---|---|---|
+  | mean | 2.49 / 1.71 | **3.61** | 2.80 |
+  | median | 0.41 / 0.31 | 1.51 | 2.04 |
+  | levels cleared | — | **22.0** | 19.5 |
+  | zeros | 7 | 7 | 8 |
+  | tok/s | 195–203 | 246 | 287 |
+  | mean actions/game | — | 66 | 62 |
+
+- **v14 = 3.61 exceeds the incumbent's best-ever offline draw (2.49) by +1.12, wider than the
+  ±0.8 noise band.** First lever since the ACTION7 fix to clear that bar. Second-order win:
+  the agent now clears 22 levels at 66 actions/game where the old stack averaged 149 actions
+  and far fewer clears — Qwen3.8 is both faster (246 vs ~200 tok/s) and more action-efficient,
+  which is what a completion-capped score actually pays for.
+- **v15 did NOT pay: 2.80 vs 3.61.** Legitimate same-session paired A/B, but the 0.81 delta sits
+  right on the noise threshold → read as **no evidence**, not "worse". v15's median is HIGHER
+  (2.04 vs 1.51); v14's mean leans on `ft09 = 28.57`. The upstream v30 graft stack does not
+  transfer to our stack as-is. Shelved, not rejected — re-test if a lever needs it.
+- **sk48 still the noise canary:** v14 `sk48 = 0.00` / `sk48-dup = 1.39`; v15 both 0.00.
+- **PROMOTED: `submit_config.json` → version 2 (= v14).** Daily default was Kochi v1 (Qwen3.6),
+  which the whole field abandoned in August; leaving it in place costs a draw per day. Revert is
+  one edit back to `"version": 1`.
+- **09-02 slot already spent before the runs landed:** ref `55953236`, Kochi v1, 03:51 UTC
+  (manual run of `scripts/daily_submit.py`; server Date header confirmed 2026-09-02 03:51 UTC
+  per the stale-clock ops lesson). **First live Qwen3.8 draw = the 09-03 cron fire.**
+- **Leaderboard mechanics confirmed (arxiv 2603.24621 + Kaggle API):** 25 public demo /
+  55 semi-private (API) / 55 fully private (official competition). ARC Prize state they
+  "will never report public set scores of any system on the official leaderboard".
+  Kaggle submission records carry both `publicScore` and `privateScore`; every one of ours has
+  `privateScore` empty → the private half is withheld until the 2026-11-02 deadline and
+  decides final standing. Scoring confirmed as RHAE: `S = min(1.0, h/a)²` with the human
+  baseline = **second-best** human's action count, level-index weighted (level 1 = 1/15,
+  level 5 = 5/15 of a 5-level game), averaged over environments.
+- **Next:** (1) watch the 09-03 draw — first live Qwen3.8 number; (2) `deathclock` is still the
+  highest-value unflagged graft (not in v30, not in v15); (3) the MTP head ships in the
+  checkpoint we already mount and is still unused by the vLLM launch; (4) confirm whether
+  final ranking needs explicit submission selection before 11-02.
