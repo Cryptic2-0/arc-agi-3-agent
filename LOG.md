@@ -1338,3 +1338,68 @@ Format per entry:
   highest-value unflagged graft (not in v30, not in v15); (3) the MTP head ships in the
   checkpoint we already mount and is still unused by the vLLM launch; (4) confirm whether
   final ranking needs explicit submission selection before 11-02.
+
+## 2026-09-03 — v14 LIVE = 2.26 (NEW BEST, rank 216); v16/v17 pushed; step-6 arithmetic corrected by source read
+
+- **FIRST LIVE Qwen3.8 DRAW = 2.26** (ref `55974448`, 09-03 04:35 UTC, kernel version 2).
+  Previous best was **1.46** set 07-24; the whole 33-draw August series topped out at 1.35.
+  **Rank 216 / 2752**, up from 488. Roadmap step 1 GATE PASSED (draw >= 1.46), so the model
+  swap is confirmed live, not just offline. Board above us: 7.51 / 5.53 / 5.49 / 5.43 / 4.99.
+- Sanity on the offline gate: v14 offline 3.61 -> live 2.26. The ordering held this time
+  (unlike v7, whose best-ever offline became LB 0.06), but the ~1.35 gap between offline mean
+  and live draw is worth remembering when reading future offline numbers.
+- **SESSION 1 PUSHED, both Save&Run RUNNING** (`scripts/build_v16_v17.py`, anchored + asserted):
+  - **v16** = v14 + `goalkeep` + `deathclock`, cell 12 only (changed cells `[0, 12]`).
+    `deathclock` is the lever; `goalkeep` is only its carrier — composite.py gates it as
+    `if active.get("goalkeep") and flags.get("deathclock")` and goalkeep's digest is the sole
+    channel to the agent. Pushed as kernel version **3** of `kochi-loki-arc-agi-3`.
+    Target: tn36 / sc25 / sp80, our three non-starved zeros.
+  - **v17** = v14 + MTP speculative decoding + `LOCAL_ANALYZER_TIMEOUT=900`, cell 8 only
+    (changed cells `[0, 8]`). MTP is **probed** (`--help` for `--speculative-config`) and has a
+    **stock fallback** (kill + relaunch without) because neither the flag spelling nor the
+    method name is confirmed for the pinned vLLM 0.19.0. Banners to grep:
+    `TAAF_V17 MTP PROBE`, `TAAF_V17 MTP ACTIVE=`. Pushed as version **2** of
+    `kochi-loki-arc-agi-3-v15`.
+  - Verified offline before pushing: both notebooks' code cells parse; v17's patch was executed
+    against the real `setup_commands.json` and the resulting here-doc body **parses as valid
+    Python** (`launch=1 timeout=1`).
+  - `submit_config.json` still pins version **2** (v14), so the daily default is untouched by
+    either experiment.
+
+### CORRECTION to roadmap step 6 — from reading the scheduler, not from arithmetic
+
+The 09-02 roadmap claimed "~4 games' worth of budget does not exist" by dividing an 8h20m soft
+end across 110 games. **That framing was wrong.** What the source actually says:
+
+- **The pool assumption is CONFIRMED.** `HarnessSolver._worker_pool` is a `ThreadPoolExecutor`
+  sized to `self.concurrency` ("Custom pool sized to self.concurrency: asyncio.to_thread routes
+  onto Python's default executor, capped at min(32, cpu+4) — which would silently cap real
+  concurrency below self.concurrency"). A freed slot does admit the next queued game.
+- **`runtime_limit_reached()` reads ONLY the fixed `max_runtime_s_per_game`** — no awareness of
+  how much global wall remains. Every game burns its full 7920 s; our run records confirm all 25
+  offline games end `gave_up` at ~7920 s.
+- **The 8h20m "safety pack" does far less than its own comment claims.**
+  `soft_time_remaining_seconds()` is consumed by exactly one caller — `request_timeout_seconds()`
+  — where it clamps an individual HTTP request timeout. **It does not stop scheduling, does not
+  drain the pool, and does not reallocate per-game budget.** It cannot protect the tail of a run.
+- **Where 7920 came from:** `_max_runtime_minutes_per_game()` derives it as
+  `max_experiment_runtime / waves`, and `_wave_count = ceil(runs / concurrency)`. For the OFFLINE
+  shape (26 games x 2 passes = 52 runs / 28 = **2 waves**) that is 2 x 132 min = 4.4 h — exactly
+  our observed 4h24m wall. **It was sized for a 2-wave offline run and is applied unchanged live.**
+- **The live shape is 110 runs, not 55.** Tufa's own grafts say so:
+  `competition_arcade.py: OFFICIAL_110_RUN_COUNT = 110`, `family_store.py: "All 110 competition
+  runs share ONE process and ONE ThreadPoolExecutor"`, `transfer_solver.py: "the 110 competition
+  runs"`. **Our cell-14 comment claiming "55 games / 28-way = 2 waves, typical live wall ~5h" is
+  therefore wrong and should be corrected.**
+- **Real live arithmetic:** ceil(110/28) = **4 waves** x 7920 s = 31,680 s = 8 h 48 m, plus ~7 min
+  vLLM boot (measured: server ready at t=394 s, smoke test done t=417 s) = **~8 h 55 m against
+  Kaggle's 9 h hard wall. Margin ~5 minutes** — and the soft end cannot save the tail.
+- **Status: MECHANISM CONFIRMED, EXPOSURE UNMEASURED.** We have no live wall-clock telemetry
+  (competition reruns emit no log), so whether wave 4 is actually being truncated is unproven.
+  It is consistent with the August draw distribution but not evidence for it.
+- **Cheap mitigation, for a later version:** set `bm.solver.max_runtime_s_per_game = 7200` on the
+  TRUE_SUBMISSION branch only. 4 x 7200 = 28,800 s = 8 h + boot = 8 h 07 m, ~50 min margin, at a
+  9% per-game budget cut. Alternative: raise live concurrency to 38 so 110/38 = 3 waves, but that
+  cuts tok/s per game and throughput is our measured bottleneck — prefer the budget cut.
+- **GATE unchanged:** reproduce in `competition_sim` (110 cloned IDs, one shared card) before
+  shipping. That rule exists because v8 drew 0.00 on a scorecard mechanic offline could not see.
