@@ -1403,3 +1403,70 @@ end across 110 games. **That framing was wrong.** What the source actually says:
   cuts tok/s per game and throughput is our measured bottleneck — prefer the budget cut.
 - **GATE unchanged:** reproduce in `competition_sim` (110 cloned IDs, one shared card) before
   shipping. That rule exists because v8 drew 0.00 on a scorecard mechanic offline could not see.
+
+## 2026-09-04 — SESSION 1 RESULTS: both levers NO-EVIDENCE; MTP works and buys nothing → decode is not the bottleneck
+
+- **Both runs clean.** v16 banners `[goalkeep] armed` + `[deathclock] armed`; v17 banners
+  `TAAF_V17 MTP PROBE: --speculative-config present=True` and **`TAAF_V17 MTP ACTIVE=True`**
+  (no fallback fired — vLLM 0.19.0 accepts `--speculative-config {"method":"mtp",
+  "num_speculative_tokens":3}` against this checkpoint's bundled MTP head on the first try).
+
+  | | v14 | **v16** goalkeep+deathclock | **v17** MTP+timeout |
+  |---|---|---|---|
+  | mean | 3.61 | 3.94 | 3.26 |
+  | median | 1.51 | 1.81 | **2.30** |
+  | zeros | 7 | **11** | 8 |
+  | levels cleared | 22.0 | 23.0 | 22.0 |
+  | tok/s | 246 | 257 | 255 |
+  | actions/game | 66 | 62 | 60 |
+
+- **v16: NO EVIDENCE, and it missed its own target.** +0.33 mean is well inside the ±0.8 band.
+  Worse, the three games it was aimed at — **tn36, sc25, sp80 — are all still exactly 0.00**.
+  Unique zeros went **7 → 11**. Median and levels moved up slightly; nothing here is separable
+  from noise. deathclock's mechanism is real (upstream measured it on 150 levels) but on OUR
+  stack it did not convert. Not promoted. Not rejected — one draw.
+- **v17: NO EVIDENCE on the mean** (-0.35, inside noise), **but the highest median of any run
+  to date (2.30 vs v14's 1.51).**
+
+### THE FINDING — MTP works perfectly at the engine and is worth ~nothing end to end
+
+From `vllm-openai-server.log` (fetched from the kernel output, 1.16 MB, 1,586 `SpecDecoding`
+metric lines):
+
+```
+SpecDecoding metrics: Mean acceptance length: 3.30, Accepted throughput: 352.41 tokens/s,
+                      Drafted throughput: 459.01 tokens/s
+                      ... 3.17 / 245.00 / 338.70
+                      ... 3.27 / 243.69 / 322.48
+```
+
+**Mean acceptance length ~3.2–3.3.** The engine is emitting roughly three tokens per forward
+step instead of one — speculative decoding is doing exactly what it is supposed to.
+
+**And job-level throughput moved 246 → 255 tok/s (+3.7%), which is inside the run-to-run spread
+we already see from graft changes alone (v14 246 vs v15 287, no serving change at all).**
+
+**Therefore: GPU decode is NOT the binding constraint.** If tokens-per-forward-step triples and
+end-to-end token rate does not move, the wall-clock is being spent elsewhere — prefill of a 32k
+context re-sent every turn across 28 concurrent games, the Python sandbox round-trip, and harness
+per-turn overhead. This independently corroborates the v3 finding from 2026-07-09: *"tok/s dropped
+224→178 when replies were short: wallclock overhead binds when replies are short, not GPU decode."*
+We had that written down and then spent roadmap step 3 on decode anyway.
+
+- **Consequence for roadmap step 3:** premise refuted. MTP is not a throughput lever on this
+  workload. Keep it on (it is free and slightly positive) but stop treating it as the answer.
+- **Consequence for roadmap step 4:** re-aim. The scheduler knobs worth testing are the
+  **prefill** ones — `--enable-prefix-caching` (currently ON; keithtyser's measured winner has it
+  **OFF**), `--max-num-batched-tokens`, chunked prefill — not decode batch size. Note keithtyser
+  pairs MTP with `max_num_seqs=8`, i.e. he *lowers* concurrency to make speculation pay; testing
+  MTP at our 28-way concurrency in isolation may have been the wrong split.
+- **New candidate, now the highest-value throughput idea:** cut prompt bytes per turn. The
+  analyzer context is 32768 and the whole history is re-sent every turn; if prefill dominates,
+  prompt size converts to wall-clock more directly than anything on the decode side.
+- **Also recorded:** vLLM warned `Enabling num_speculative_tokens > 1 will run multiple times of
+  forward on same MTP layer, which may result in lower acceptance` — acceptance came out at 3.3
+  regardless, so the warning did not bite here.
+
+- **Live:** 09-03 draw = **2.26** (new best, rank 216/2752). 09-04 draw `56004733` submitted
+  04:37 UTC, PENDING. Daily default unchanged (`submit_config.json` version 2 = v14) — neither
+  session-1 candidate earned promotion.
