@@ -1470,3 +1470,74 @@ We had that written down and then spent roadmap step 3 on decode anyway.
 - **Live:** 09-03 draw = **2.26** (new best, rank 216/2752). 09-04 draw `56004733` submitted
   04:37 UTC, PENDING. Daily default unchanged (`submit_config.json` version 2 = v14) — neither
   session-1 candidate earned promotion.
+
+## 2026-09-04 — prior-year recon: mostly dead, but it forced a read of the REAL scorer
+
+**Asked: can the previous year's solution help? Short answer: no, and the arithmetic says why.**
+
+- **"Previous year" is two different competitions.**
+  - **ARC-AGI-2 / ARC Prize 2025** (Mar–Nov 2025, 1,455 teams, 15,154 entries). Winner **NVARC**
+    (Ivan Sorokin + Jean-Francois Puget, NVIDIA) at **27.64% public / 24% private**: a fine-tuned
+    **4B** model + heavy **synthetic data generation** + **test-time training**, building on the
+    2024 ARChitects entry. Different task entirely — static input→output grid pairs, no actions,
+    no levels, no efficiency term. Direct evidence it does not port: **Abstraction Lab & MindsAI**,
+    an ARC-AGI-2 heavyweight, sits at **2.94** on our board. Sorokin's artifact
+    (`sorokin/qwen3_4b_grids15_sft139`) is on Kaggle but is 4B and grid-SFT — our v7 rule
+    (capability tracks active params) plus the VL requirement rule it out.
+  - **ARC-AGI-3 agent preview 2025** — same task, and its winner is our ancestor.
+    **StochasticGoose 12.58%** (CNN+RL frame-change prediction) cleared 2 games / 18 levels in
+    **255,964 actions** ≈ 14,000 per level against baselines of 20–256. Under the shipped scorer
+    that is `s_i = (100/14000)^2*100 ≈ 0.000005` per level. **Structurally worth ~0 here.** The
+    preview metric rewarded completion; RHAE squares the efficiency ratio.
+  - The **graph-exploration paper** (19 levels @ 4000-action budget) contributes two ideas —
+    priority-tiered click targets and an untested-action frontier — and **both are already in the
+    bundle** as `clickmap`, `searchmap` and `untried`. Nothing new to import.
+  - **Sensi** (arxiv 2603.17683, 2026) is the only modern paper actually on ARC-AGI-3:
+    **v1 solved 2 levels, v2 solved 0.** Its value is a negative finding worth keeping —
+    *"the architectural bottleneck has shifted from learning efficiency to perceptual grounding …
+    a self-consistent hallucination cascade originating in the perception layer."*
+
+### THE ACTUAL PAYOFF — the scoring formula, verified from the wheel we install
+
+Read out of `arc_agi_3_wheels/arc_agi-0.9.8-py3-none-any.whl`, the wheel cell 4 pip-installs:
+
+```
+per completed level i:  s_i = min( (baseline_i / actions_i)**2 * 100 , 115 )
+per failed level i:     s_i = 0
+weight_i = level_index (1-based)
+raw       = sum(s_i * w_i) / sum(w_i)          # over ALL levels of the game
+max_score = sum(w_i where s_i > 0) / sum(w_i) * 100
+game      = min(raw, max_score)
+```
+
+- **The copy in `ARC-AGI-3-Agents/.venv/` is 0.9.1 and is WRONG in three ways** — linear instead
+  of squared, cap 100 instead of 115, plain average instead of level-index weighted. It is also
+  the copy an editor opens first. Flagged in REPORT.md.
+- **Verified against the v14 run:** `ft09 = 28.57 = 100*(1+2+3)/21`, `ka59 = 10.71 = 100*(1+2)/28`,
+  `vc33 = 10.71`. Each equals its cap **exactly**, which happens only when raw >= cap — i.e. when
+  efficiency is already saturated.
+- **So: on every game we score, the cap binds. Efficiency is a solved problem for us; DEPTH is the
+  entire remaining score.** Clearing a level in <= baseline saturates its contribution; going
+  faster still gains nothing; every action past baseline costs quadratically.
+
+### RESET does not refund the scored action count — MEASURED
+
+`sum(actions_per_level) == len(history)` **exactly** in every game run of `out_v14/benchmark.json`,
+*including* runs containing a RESET (tn36 96 actions / 1 reset, dc22 98 / 1, tu93 36 / 1).
+Actions accumulate across resets within a level.
+
+`deathclock`'s "RESET bought the budget back on 134 of 134" is about the **engine's** limit
+(`base_game.level_reset` → `_action_count = 0`) — a **different counter** from the scorer's.
+
+**Consequence: exploration is never free, and the "explore → RESET → execute cleanly" policy I
+sketched on 09-03 does not work as described.** It buys engine budget, not score. It also explains
+tn36: 96 actions on a level with baseline 32 means even a successful clear scores
+`(32/96)^2*100 = 11.1`, not 115.
+
+- **Roadmap consequence:** the prompt-procedure lever (step 5) must be re-aimed. "Explore in life
+  one, execute in life two" is still right for *surviving* the engine's action clock, but it does
+  NOT reset the score denominator — so the instruction has to be **"reach the clear inside the
+  baseline action count"**, not "use the second life freely".
+- **Still open (zero GPU):** whether `actions_per_level` is what the *competition gateway* reports
+  or only what our offline scorecard computes. `add_level` is defined in the wheel and never
+  called there — the caller is server-side.

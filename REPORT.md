@@ -107,6 +107,42 @@ Source: competition page + repo README/changelog.
     "5/day" are describing ARC-AGI-2. There is no submission-count lever; the only way to
     raise the max draw is to raise the draw distribution.
 
+### The scoring formula, read from the shipped wheel (2026-09-04)
+12. **The authoritative scorer is `arc_agi/scorecard.py` inside
+    `arc_agi_3_wheels/arc_agi-0.9.8-py3-none-any.whl`** — the wheel the notebook actually
+    pip-installs. Verified verbatim:
+
+    ```
+    per completed level i:   s_i = min( (baseline_i / actions_i)**2 * 100 , 115 )
+    per failed level i:      s_i = 0
+    weight_i = level_index (1-based)
+    raw       = sum(s_i * w_i) / sum(w_i)          # over ALL levels of the game
+    max_score = sum(w_i where s_i > 0) / sum(w_i) * 100
+    game      = min(raw, max_score)
+    ```
+
+    **Do NOT read `ARC-AGI-3-Agents/.venv/.../arc_agi/scorecard.py`** — that venv holds
+    **0.9.1**, which computes a *linear* `(baseline/actions)*100`, caps at **100**, and takes a
+    *plain* average with no level weighting. It is three behaviours wrong and it is the copy an
+    editor opens first.
+13. **On every game we actually score, the CAP binds, not the efficiency term.** Verified against
+    the v14 run: `ft09 = 28.57 = 100*(1+2+3)/21` (3 of 6 levels), `ka59 = 10.71 = 100*(1+2)/28`
+    (2 of 7), `vc33 = 10.71` (2 of 7) — each equals its cap exactly, which can only happen when
+    raw >= cap, i.e. when efficiency is already saturated. **Consequence: efficiency is a solved
+    problem for us and depth is the entire remaining score.** A level cleared in <= its baseline
+    saturates its contribution; there is no reward for going faster still, and every action
+    beyond baseline costs quadratically.
+14. **RESET does NOT refund the scored action count — measured, not assumed.** In every
+    `benchmark.json` game run, `sum(actions_per_level) == len(history)` exactly, *including* the
+    runs that contain a RESET (tn36 96 actions / 1 reset, dc22 98 / 1, tu93 36 / 1). Actions
+    accumulate across resets within a level. `deathclock`'s "RESET bought the budget back on 134
+    of 134" refers to the **engine's** per-level action limit (`base_game.level_reset` sets
+    `_action_count = 0`), which is a different counter from the scorer's. **So exploration is
+    never free: an "explore, RESET, then execute cleanly" policy does not clear the denominator,
+    and any plan that assumes it does is wrong.** This also explains tn36: 96 actions spent on a
+    level with baseline 32 means that even a successful clear would have scored
+    (32/96)^2*100 = 11.1, not 115.
+
 ## Superseded beliefs
 <!-- date | belief we held | what overruled it (result/source) -->
 - 2026-07-07 | "Build no-LLM graph exploration; LLM agents are the wrong path (~0.3%)" |
@@ -150,3 +186,8 @@ Source: competition page + repo README/changelog.
   On 09-01 the top is 7.51 and #20 is 2.97 — we are rank 488 of 2694. The whole delta
   arrives from an axis we never varied (the base checkpoint), not from the graft/prompt
   axes this log spent twelve versions on.
+- 2026-09-04 | "Completion-at-any-action-cost is a viable fallback (cf. StochasticGoose 12.58%
+  in the 2025 preview)" | The preview metric rewarded completion; RHAE squares the efficiency
+  ratio. StochasticGoose cleared 18 levels in 255,964 actions ~ 14,000 per level against
+  baselines of 20-256, which under the shipped 0.9.8 scorer is s_i ~ 0.000005 per level. Any
+  brute-force explorer is structurally worth ~0 here, no matter how many levels it clears.
