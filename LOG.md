@@ -1541,3 +1541,64 @@ tn36: 96 actions on a level with baseline 32 means even a successful clear score
 - **Still open (zero GPU):** whether `actions_per_level` is what the *competition gateway* reports
   or only what our offline scorecard computes. `add_level` is defined in the wheel and never
   called there — the caller is server-side.
+
+## 2026-09-09 — v14 draw distribution measured; upstream pruned its own stack; v18/v19 pushed (firstcontact)
+
+- **v14's live distribution over 7 draws: 2.26 / 1.66 / 1.56 / 1.47 / 1.44 / 1.31 / 1.25**
+  — mean **1.56**, best **2.26**. Compare the Qwen3.6 August series (mean ~0.84, max 1.35):
+  the model swap lifted the whole distribution, not just one lucky draw. Offline mean was 3.61,
+  so the offline→live ratio is ~0.43 and should be applied to future offline reads.
+- **The field ran away while we improved.** 09-01 top was 7.51; **09-09 top is Tufa Labs 11.04**,
+  then Third Intelligence 8.21, Daniel Franzen 7.63, mostik.ai 7.51, **NVARC3 6.17** (the
+  ARC-AGI-2 2025 winners, now 5th here), Fususu 5.78. **#20 cutoff 4.74, #50 4.07, #100 3.76.**
+  2,912 teams. We are **rank 470 at 2.26** — better than ever and further behind than ever.
+  21 days to milestone 2.
+- **Upstream shipped 7 new grafts (09-01 → 09-07 bundle, 613 KB → 651 KB):** `barclock`,
+  `firstcontact`, `inert`, `misstep`, `reach7`, `revive`, `turnbudget`. `deathclock` grew
+  18k → 29k, `goalkeep` 36k → 39k, `composite` 28k → 35k.
+- **AND THEY PRUNED.** thtennant's v35 (09-07) runs exactly:
+  `{efficiency, retry_guard, shortcircuit, goalkeep, hudmask, clickmap, searchmap, reach7,
+  firstcontact}`. Dropped since v30: clockwatch, lawbook, winframe, carryover, undo, untried,
+  tally, bandlevel — **the v30 set our v15 measured at 2.80 vs v14's 3.61** — and **deathclock**,
+  **which our v16 measured as no-evidence**. Upstream's pruning independently agrees with both of
+  our null results. That is the strongest reason to trust the two flags they kept.
+
+### The two keepers
+
+- **`reach7`** is upstream's version of our v10 ACTION7 fix, generalised: every
+  `arcengine.GameAction` member the name map does not cover is added mapped to **itself**, not
+  just ACTION7. Their probe: **ACTION7 appears in 0 of 9,772 archived actions**, on 6 of 25
+  public games — including su15, whose only other control is the mouse, and sk48, where "ACTION7
+  moves the board on 40/40 presses at every one of six levels and was pressed ZERO times in all
+  twelve archived passes". Note this vindicates our v10 lever (1.31 → 1.46) and explains why
+  `untried` (v28) could never work: it nagged the model about a control it was structurally
+  incapable of pressing. Standalone flag, no carrier.
+- **`firstcontact`** is the lever. Before the model's first turn, the **solver** presses each
+  declared non-click control once (depth 2 re-presses only the silent ones) and hands the model
+  the table. **Costs actions and ZERO model calls.** Probed over all 150 levels of the 25 public
+  games: **418 of 427 live controls found (98%) at a median 4 actions**, and across 450
+  level-sweeps it **never cleared a level and never ended one**. Clicks excluded (one click says
+  nothing about a 4096-cell space; `clickmap` already partitions that). Gated on `goalkeep`.
+- **Why it is the right lever for us**, in upstream's own numbers plus ours: a model turn takes a
+  **median 120 s** against the 7920 s per-game wall, so **a game buys ~22 model calls**. Our
+  baseline analysis found **4 of 7 zero-scoring games took fewer actions than the level-1 human
+  baseline**. Control discovery is a fixed mechanical question currently paid for in model calls;
+  firstcontact pays for it in actions. This is the cheap half of "explore cheaply, execute
+  expensively" — and unlike the version I sketched on 09-03, it does not depend on RESET
+  refunding the score denominator (it does not; that was measured and corrected).
+
+### Pushed, both Save&Run RUNNING (`scripts/build_v18_v19.py`, cell 12 only, asserted)
+
+- **v18** = v14 flags + `goalkeep` + `reach7` + `firstcontact`. Isolates the new lever; keeps
+  banking/transfer/recovery. Kernel version **4**.
+- **v19** = upstream v35's nine flags verbatim. Drops banking (0 full wins in 104+ runs),
+  transfer (never published live) and recovery (upstream dropped it deliberately at their v14),
+  and turns `efficiency` ON. A wholesale adopt of the best-measured public configuration.
+  Kernel version **3** of the -v15 slot.
+- v18 vs v19 differ in cells `[0, 12]` only, so the pair is a clean same-session A/B, and
+  together they ask two different questions: *is firstcontact worth anything on our stack* and
+  *is our stack worth keeping at all versus upstream's current best*.
+- Build asserts the ACTION7 fix, the Qwen3.8 pin, the Kaggle-Model mount fix and the 8h20m guard
+  all survive, and that no pruned flag reappears.
+- `submit_config.json` still pins version **2** (v14) — daily default untouched.
+- Local `external/fork_bundle/` snapshot refreshed to the 09-07 bundle (34 graft modules).
