@@ -1,6 +1,6 @@
 {
   "competition": "arc-prize-2026-arc-agi-3",
-  "kernel": "soumyacryptic/kochi-loki-arc-agi-3",
-  "version": 2,
-  "message": "Kochi Loki v14: Qwen3.8-27B-FP8 base-model swap (from Qwen3.6) + ACTION7 executability fix + v5 graft set, upstream fork bundle, context 32768 / concurrency 28, 8h20m soft end. Validated Save&Run: offline mean 3.61 vs incumbent 2.49, 22 levels cleared, 246 tok/s. LB keeps max draw."
+  "kernel": "soumyacryptic/kochi-loki-flashnext-a7",
+  "version": 1,
+  "message": "Kochi Loki v21: keithtyser Flash-Next NVFP4 MTP recipe (Qwen3.8-Flash-Next-NVFP4, MTP-3, vLLM kv5-bf16-mtp3-c8-cg32, June Tufa duck bundle) + Kochi ACTION7 reverse-map fix. Validated Save&Run public-25: 8.50 vs same-session verbatim recipe 7.36 vs v14 3.70; zeros 6/25. LB keeps max draw."
 }
