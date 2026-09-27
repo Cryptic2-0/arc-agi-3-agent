@@ -1,6 +1,6 @@
 {
   "competition": "arc-prize-2026-arc-agi-3",
-  "kernel": "soumyacryptic/kochi-loki-flashnext-a7",
+  "kernel": "soumyacryptic/kochi-loki-sheetu",
   "version": 1,
-  "message": "Kochi Loki v21: keithtyser Flash-Next NVFP4 MTP recipe (Qwen3.8-Flash-Next-NVFP4, MTP-3, vLLM kv5-bf16-mtp3-c8-cg32, June Tufa duck bundle) + Kochi ACTION7 reverse-map fix. Validated Save&Run public-25: 8.50 vs same-session verbatim recipe 7.36 vs v14 3.70; zeros 6/25. LB keeps max draw."
+  "message": "Kochi Loki v25: Scott Le Grand's public harness taaf-flashnext-sheetu12b-0922 verbatim (keithtyser Flash-Next NVFP4 MTP recipe + agentfix F1 image trimming + F3 world-model parser). Save&Run public-25: 10.28 (47 levels, 3 zeros) at a 7200 s validation cap vs v21 8.50 (35 levels). LB keeps max draw."
 }
