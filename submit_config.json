@@ -1,6 +1,6 @@
 {
   "competition": "arc-prize-2026-arc-agi-3",
-  "kernel": "soumyacryptic/kochi-loki-franzen-m2",
-  "version": 1,
-  "message": "Kochi Loki v28: Daniel Franzen's milestone-2 solution verbatim (Duck harness patch + SGLang Pennyroyal v2.5.3, Intel Qwen3.8-Flash-Next W4A16 AutoRound + INT4 MTP draft, FP8 KV, 128k context, priority scheduler). Save&Run demo-10 at 25 min/game: 46.72 (46 levels, 0 zeros) vs v25 18.89 on the same 10 games at 2 h/game. LB keeps max draw."
+  "kernel": "soumyacryptic/kochi-loki-franzen-dprime",
+  "version": 3,
+  "message": "Kochi Loki v36: Daniel Franzen's milestone-2 solution with shiiin9's D' slot priority (pace-aware: tokens per cleared level sets priority and patience), notebook verbatim, Franzen's Docker pin. Public 31.54 (one draw); our replay sim D' 18.67 vs Franzen 13.32. LB keeps max draw."
 }
